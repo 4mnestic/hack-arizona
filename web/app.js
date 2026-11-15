@@ -101,6 +101,57 @@ function setupAlerts() {
   });
 }
 
+// Next 24 h forecast strip and next spray window.
+const hourLabel = (iso) => new Date(iso).toLocaleTimeString([], { hour: "numeric" });
+const dayHour = (iso) => new Date(iso).toLocaleString([], { weekday: "short", hour: "numeric", minute: "2-digit" });
+const dayLabel = (iso) => new Date(iso).toLocaleDateString([], { weekday: "short" });
+const checkNames = (c) => c.map((x) => x.replace(/_/g, " ")).join(", ");
+
+function forecastSummary(f) {
+  const now = f.hours[0]?.status;
+  if (!now) return "No forecast available.";
+  if (now === "GO") {
+    return f.worsens
+      ? `Good to spray now. Expected to turn ${f.worsens.status} around ${dayHour(f.worsens.time)} (${checkNames(f.worsens.checks)}).`
+      : "Good to spray for the next 24 hours.";
+  }
+  if (f.next_go) return `Next GO window: ${dayLabel(f.next_go.start)} ${hourLabel(f.next_go.start)} – ${hourLabel(f.next_go.end)}.`;
+  return "No GO window in the next 24 hours.";
+}
+
+function renderForecast(f) {
+  $("forecast").hidden = false;
+  $("forecast-summary").textContent = forecastSummary(f);
+  const detail = (h) => `${dayHour(h.time)}: ${h.status}${h.checks.length ? ` (${checkNames(h.checks)})` : ""}`;
+  $("forecast-strip").replaceChildren(...f.hours.map((h) => {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.className = h.status;
+    b.setAttribute("role", "listitem");
+    b.setAttribute("aria-label", detail(h));
+    b.title = detail(h);
+    b.addEventListener("click", () => {
+      $("forecast-strip").querySelectorAll(".sel").forEach((x) => x.classList.remove("sel"));
+      b.classList.add("sel");
+      $("forecast-detail").textContent = detail(h);
+    });
+    return b;
+  }));
+  $("forecast-ticks").replaceChildren(...f.hours.map((h, i) => {
+    const s = document.createElement("span");
+    s.textContent = i % 6 === 0 ? hourLabel(h.time) : "";
+    return s;
+  }));
+}
+
+async function updateForecast(pesticide, nozzle) {
+  try {
+    renderForecast(await api(`/api/forecast?${new URLSearchParams({ pesticide, nozzle })}`));
+  } catch {
+    $("forecast").hidden = true;  // the forecast is extra; the live decision still stands
+  }
+}
+
 function locate() {
   if (coords) return Promise.resolve(coords);
   return new Promise((resolve, reject) => {
@@ -130,6 +181,7 @@ async function update() {
     const s = scenarios.find((x) => x.id === $("scenario").value);
     $("scenario-desc").textContent = s?.description || "";
   }
+  updateForecast(pesticide, nozzle);
   try {
     render(await api("/api/decision", { pesticide, nozzle, ...(await weatherQuery()) }));
   } catch (e) {

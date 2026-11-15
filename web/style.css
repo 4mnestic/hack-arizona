@@ -173,3 +173,16 @@ details > summary { cursor: pointer; min-height: 44px; display: flex; align-item
   color: inherit; font-size: 1.1rem; cursor: pointer;
 }
 .alerts-btn { margin-top: 12px; width: 100%; justify-content: center; cursor: pointer; font: inherit; }
+
+/* Forecast strip */
+.forecast-summary { font-weight: 600; margin: 0 0 8px; }
+.forecast-strip { display: grid; grid-template-columns: repeat(24, minmax(0, 1fr)); gap: 2px; }
+.forecast-strip button {
+  height: 34px; min-width: 0; padding: 0; border: 0; border-radius: 3px; cursor: pointer; background: var(--muted);
+}
+.forecast-strip button.GO { background: var(--go); }
+.forecast-strip button.CAUTION { background: var(--caution); }
+.forecast-strip button.STOP { background: var(--stop); }
+.forecast-strip button.sel { outline: 2px solid var(--text); outline-offset: 1px; }
+.forecast-ticks { display: grid; grid-template-columns: repeat(24, minmax(0, 1fr)); margin-top: 4px; }
+.forecast-ticks span { white-space: nowrap; }

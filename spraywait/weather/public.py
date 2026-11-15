@@ -1,7 +1,10 @@
-"""Public forecast-model weather (Open-Meteo, free, no key). Demo use only; real farms supply their own data."""
+"""Public forecast-model weather (Open-Meteo, free, no key).
+
+Current conditions are a demo-only stand-in for a farm station; the hourly forecast plans spray windows.
+"""
 
 import json
-from datetime import datetime
+from datetime import datetime, timezone
 from urllib.parse import urlencode
 from urllib.request import urlopen
 
@@ -29,10 +32,31 @@ class PublicSource(WeatherSource):
         })
         with urlopen(f"{URL}?{query}", timeout=self.timeout) as res:
             cur = json.load(res)["current"]
-        # The model has no 10 m temperature, so the ground level pairs 2 m temp with 10 m wind.
-        levels = [
-            Level(round(2 * M_TO_FT, 1), cur["temperature_2m"], cur["wind_speed_10m"], cur["wind_direction_10m"]),
-            Level(round(80 * M_TO_FT), cur["temperature_80m"], cur["wind_speed_80m"], cur["wind_direction_80m"]),
-        ]
         # "current" is the model's now-cast, so stamp it with fetch time.
-        return Reading(datetime.now(), levels, source=self.name)
+        return Reading(datetime.now(), _levels(lambda f: cur[f]), source=self.name)
+
+
+def _levels(get) -> list[Level]:
+    """Ground and 80 m levels. The model has no 10 m temperature, so the ground pairs 2 m temp with 10 m wind."""
+    return [
+        Level(round(2 * M_TO_FT, 1), get("temperature_2m"), get("wind_speed_10m"), get("wind_direction_10m")),
+        Level(round(80 * M_TO_FT), get("temperature_80m"), get("wind_speed_80m"), get("wind_direction_80m")),
+    ]
+
+
+def hourly_forecast(lat: float, lon: float, hours: int = 24, timeout: float = 8.0) -> list[Reading]:
+    """Forecast readings for each hour from the current hour on. Hours with missing model values are skipped."""
+    query = urlencode({
+        "latitude": lat, "longitude": lon, "hourly": ",".join(FIELDS), "forecast_hours": hours,
+        "temperature_unit": "fahrenheit", "wind_speed_unit": "mph", "timezone": "GMT",
+    })
+    with urlopen(f"{URL}?{query}", timeout=timeout) as res:
+        hourly = json.load(res)["hourly"]
+    out = []
+    for i, t in enumerate(hourly["time"]):
+        if any(hourly[f][i] is None for f in FIELDS):
+            continue
+        # Engine times are naive server-local.
+        ts = datetime.fromisoformat(t).replace(tzinfo=timezone.utc).astimezone().replace(tzinfo=None)
+        out.append(Reading(ts, _levels(lambda f: hourly[f][i]), source="forecast:open-meteo"))
+    return out

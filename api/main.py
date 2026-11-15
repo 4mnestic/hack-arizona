@@ -29,6 +29,8 @@ from spraywait.weather import (SCENARIOS, FarmSource, FarmStationStore, MesonetF
                                PublicSource, SimulatedSource, StationSource, WeatherSource,
                                parse_station_payload)
 from spraywait.weather.mesonet import DEFAULT_CSV
+from spraywait.weather.public import hourly_forecast
+from spraywait.windows import plan_windows
 
 WEB_DIR = Path(__file__).resolve().parent.parent / "web"
 DEFAULT_SCENARIO = "evening_inversion"
@@ -39,6 +41,10 @@ farm = FarmStationStore()
 log = DecisionLog(Path(os.environ.get("SPRAY_LOG_PATH", "spray_log.jsonl")))
 _last_logged: dict[tuple, tuple] = {}
 _feed: MesonetFeed | None = None
+# Orchard location for the forecast (default: an almond orchard near Modesto, CA, Central Valley).
+ORCHARD = (float(os.environ.get("ORCHARD_LAT", 37.64)), float(os.environ.get("ORCHARD_LON", -120.99)))
+FORECAST_TTL = timedelta(minutes=30)
+_forecasts: dict[tuple, tuple] = {}
 
 
 def _sync_station() -> None:
@@ -184,6 +190,41 @@ def _log_if_new(req, reading, pesticide, result) -> None:
 def _with_offset(ts: str) -> str:
     """Stored times are naive server-local; add the offset so browsers show local time."""
     return datetime.fromisoformat(ts).astimezone().isoformat()
+
+
+def _forecast(lat: float, lon: float) -> list:
+    """Hourly forecast for the next 24 h, cached per location for FORECAST_TTL."""
+    key = (round(lat, 2), round(lon, 2))
+    hit = _forecasts.get(key)
+    if hit and datetime.now() - hit[0] < FORECAST_TTL:
+        return hit[1]
+    readings = hourly_forecast(lat, lon)
+    _forecasts[key] = (datetime.now(), readings)
+    return readings
+
+
+@app.get("/api/forecast")
+def forecast(pesticide: str | None = None, nozzle: str | None = None,
+             lat: float | None = None, lon: float | None = None) -> dict:
+    """Next 24 h of forecast spray status at the orchard, the next GO window, and when it next gets worse."""
+    try:
+        profile = setup.resolve(pesticide, nozzle)
+    except KeyError as e:
+        raise HTTPException(404, str(e.args[0])) from None
+    lat, lon = (lat, lon) if lat is not None and lon is not None else ORCHARD
+    try:
+        plan = plan_windows(_forecast(lat, lon), profile)
+    except (OSError, KeyError, ValueError) as e:
+        raise HTTPException(502, f"forecast unavailable: {e}") from None
+    t = lambda ts: ts.astimezone().isoformat()
+    hour = lambda h: {"time": t(h["time"]), "status": h["status"].value, "checks": h["checks"]}
+    nxt, worse = plan["next_go"], plan["worsens"]
+    return {
+        "location": {"lat": lat, "lon": lon},
+        "hours": [hour(h) for h in plan["hours"]],
+        "next_go": {"start": t(nxt["start"]), "end": t(nxt["end"])} if nxt else None,
+        "worsens": hour(worse) if worse else None,
+    }
 
 
 @app.get("/api/log")
