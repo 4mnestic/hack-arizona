@@ -101,7 +101,7 @@ FARM_API_KEY=devkey .venv/bin/uvicorn api.main:app --host 0.0.0.0 --port 8000
 
 ## Tech stack
 
-Python (FastAPI) rule engine and API, a plain HTML/JS installable web app (PWA), Open-Meteo forecasts, hosted on Render. Tested with pytest (158 tests).
+Python (FastAPI) rule engine and API, a plain HTML/JS installable web app (PWA), Open-Meteo forecasts, hosted on Render. Tested with pytest (183 tests).
 
 ## Team
 
