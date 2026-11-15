@@ -144,11 +144,28 @@ function renderForecast(f) {
   }));
 }
 
+// The browser fetches the forecast itself (its own IP; the shared host IP gets rate-limited),
+// at most every 30 min, then the server runs the checks on it.
+const FORECAST_TTL_MS = 30 * 60_000;
+let hourly = null, hourlyAt = 0, lastForecast = null;
+
+async function fetchHourly() {
+  if (hourly && Date.now() - hourlyAt < FORECAST_TTL_MS) return hourly;
+  const { forecast_url } = await api("/api/orchard");
+  const res = await fetch(forecast_url);
+  if (!res.ok) throw new Error(`forecast ${res.status}`);
+  hourly = (await res.json()).hourly;
+  hourlyAt = Date.now();
+  return hourly;
+}
+
 async function updateForecast(pesticide, nozzle) {
   try {
-    renderForecast(await api(`/api/forecast?${new URLSearchParams({ pesticide, nozzle })}`));
+    lastForecast = await api("/api/forecast", { pesticide, nozzle, hourly: await fetchHourly() });
+    renderForecast(lastForecast);
   } catch {
-    $("forecast").hidden = true;  // the forecast is extra; the live decision still stands
+    // Keep the last good forecast on a hiccup; with none, hide it (the live decision still stands).
+    if (!lastForecast) $("forecast").hidden = true;
   }
 }
 

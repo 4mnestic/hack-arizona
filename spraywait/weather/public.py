@@ -44,19 +44,29 @@ def _levels(get) -> list[Level]:
     ]
 
 
-def hourly_forecast(lat: float, lon: float, hours: int = 24, timeout: float = 8.0) -> list[Reading]:
-    """Forecast readings for each hour from the current hour on. Hours with missing model values are skipped."""
-    query = urlencode({
+def forecast_url(lat: float, lon: float, hours: int = 24) -> str:
+    """Open-Meteo hourly forecast URL (UTC times). Fetched by the browser, which isn't behind a shared host IP."""
+    return f"{URL}?" + urlencode({
         "latitude": lat, "longitude": lon, "hourly": ",".join(FIELDS), "forecast_hours": hours,
         "temperature_unit": "fahrenheit", "wind_speed_unit": "mph", "timezone": "GMT",
     })
-    with urlopen(f"{URL}?{query}", timeout=timeout) as res:
-        hourly = json.load(res)["hourly"]
-    out = []
-    for i, t in enumerate(hourly["time"]):
-        if any(hourly[f][i] is None for f in FIELDS):
-            continue
-        # Engine times are naive server-local.
-        ts = datetime.fromisoformat(t).replace(tzinfo=timezone.utc).astimezone().replace(tzinfo=None)
-        out.append(Reading(ts, _levels(lambda f: hourly[f][i]), source="forecast:open-meteo"))
-    return out
+
+
+def parse_hourly(hourly: dict, max_hours: int = 48) -> list[Reading]:
+    """Open-Meteo `hourly` block -> one Reading per hour. Hours with missing model values are skipped.
+
+    Raises ValueError for malformed data.
+    """
+    try:
+        times = hourly["time"][:max_hours]
+        out = []
+        for i, t in enumerate(times):
+            if any(hourly[f][i] is None for f in FIELDS):
+                continue
+            # Engine times are naive server-local.
+            ts = datetime.fromisoformat(t).replace(tzinfo=timezone.utc).astimezone().replace(tzinfo=None)
+            levels = _levels(lambda f: float(hourly[f][i]))
+            out.append(Reading(ts, levels, source="forecast:open-meteo"))
+        return out
+    except (KeyError, IndexError, TypeError, ValueError) as e:
+        raise ValueError(f"bad forecast data: {e!r}") from None

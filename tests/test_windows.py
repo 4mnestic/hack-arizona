@@ -1,5 +1,4 @@
-import json
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 import pytest
 from fastapi.testclient import TestClient
@@ -10,7 +9,6 @@ from spraywait.decision import Status
 from spraywait.pesticides import DEFAULT_PESTICIDE
 from spraywait.weather import Level, Reading
 from spraywait.windows import plan_windows
-from tests.test_weather_sources import FakeResponse
 
 T0 = datetime(2026, 11, 16, 0, 0)
 GO = ((70, 5, 300), (68, 6, 300))        # mixed air, moderate wind
@@ -61,66 +59,75 @@ def test_no_go_and_empty_forecast():
     assert plan_windows([], DEFAULT_PESTICIDE) == {"hours": [], "next_go": None, "worsens": None}
 
 
-def test_hourly_forecast_parses_and_skips_gaps(monkeypatch):
-    """Open-Meteo hourly data becomes one 2-level reading per hour (UTC to local); hours with nulls are skipped."""
-    hourly = {"time": ["2026-11-16T00:00", "2026-11-16T01:00"], "temperature_2m": [60, None],
-              "temperature_80m": [63, 61], "wind_speed_10m": [3, 4], "wind_speed_80m": [8, 9],
-              "wind_direction_10m": [200, 210], "wind_direction_80m": [260, 270]}
-    seen = {}
+def om_hourly(kinds, start=None):
+    """Open-Meteo-style hourly block (UTC times) for the given GO/CAUTION/STOP kinds."""
+    start = start or datetime.now(timezone.utc).replace(minute=0, second=0, microsecond=0)
+    out = {"time": [], **{f: [] for f in public.FIELDS}}
+    for i, ((t_lo, w_lo, d_lo), (t_hi, w_hi, d_hi)) in enumerate(kinds):
+        out["time"].append((start + timedelta(hours=i)).strftime("%Y-%m-%dT%H:%M"))
+        for f, v in [("temperature_2m", t_lo), ("wind_speed_10m", w_lo), ("wind_direction_10m", d_lo),
+                     ("temperature_80m", t_hi), ("wind_speed_80m", w_hi), ("wind_direction_80m", d_hi)]:
+            out[f].append(v)
+    return out
 
-    def fake_urlopen(url, timeout):
-        seen["url"] = url
-        return FakeResponse(json.dumps({"hourly": hourly}).encode())
 
-    monkeypatch.setattr(public, "urlopen", fake_urlopen)
-    rs = public.hourly_forecast(37.6, -121.0)
-    assert "forecast_hours=24" in seen["url"] and "hourly=" in seen["url"]
+def test_parse_hourly_converts_and_skips_gaps():
+    """Each hour becomes a 2-level reading (UTC to naive local); hours with nulls are skipped."""
+    h = om_hourly([GO, STOP], start=datetime(2026, 11, 16, tzinfo=timezone.utc))
+    h["temperature_2m"][1] = None
+    rs = public.parse_hourly(h)
     assert len(rs) == 1 and rs[0].timestamp.tzinfo is None and rs[0].source == "forecast:open-meteo"
+    assert rs[0].timestamp == datetime(2026, 11, 16, tzinfo=timezone.utc).astimezone().replace(tzinfo=None)
     lo, hi = rs[0].sorted_levels()
-    assert (lo.temp_f, hi.temp_f, hi.wind_mph) == (60, 63, 8)
+    assert (lo.temp_f, hi.temp_f, hi.wind_mph) == (70, 68, 6)
+
+
+def test_parse_hourly_caps_hours():
+    """No more than max_hours are read, whatever the client sends."""
+    assert len(public.parse_hourly(om_hourly([GO] * 5), max_hours=3)) == 3
+
+
+@pytest.mark.parametrize("bad", [{}, {"time": ["x"]}, {**om_hourly([GO]), "time": ["not a time"]},
+                                 {**om_hourly([GO]), "wind_speed_80m": ["fast"]}, {**om_hourly([GO]), "temperature_2m": []}])
+def test_parse_hourly_rejects_malformed(bad):
+    """Missing fields, bad times, non-numbers, or short arrays are a ValueError."""
+    with pytest.raises(ValueError):
+        public.parse_hourly(bad)
+
+
+def test_forecast_url_asks_for_hourly_fields():
+    """The browser's forecast URL requests every field the parser needs, 24 hours, UTC."""
+    url = public.forecast_url(37.6, -121.0)
+    assert "latitude=37.6" in url and "forecast_hours=24" in url and "timezone=GMT" in url
+    assert all(f in url for f in public.FIELDS)
 
 
 @pytest.fixture
-def client(monkeypatch, tmp_path):
-    monkeypatch.setattr(main, "_forecasts", {})
+def client():
     return TestClient(main.app)
 
 
-def fake_forecast(calls):
-    def f(lat, lon):
-        calls.append((lat, lon))
-        now = datetime.now().replace(minute=0, second=0, microsecond=0)
-        return [Reading(now + timedelta(hours=i), hour(i, k).levels, "forecast:test")
-                for i, k in enumerate([GO, GO, STOP])]
-    return f
+def test_orchard_endpoint(client):
+    """The orchard endpoint gives its location and the forecast URL for the browser to fetch."""
+    body = client.get("/api/orchard").json()
+    assert (body["lat"], body["lon"]) == main.ORCHARD and body["forecast_url"].startswith(public.URL)
 
 
-def test_forecast_endpoint_and_cache(client, monkeypatch):
-    """The endpoint returns hours, window and worsening at the orchard by default, and caches per location."""
-    calls = []
-    monkeypatch.setattr(main, "hourly_forecast", fake_forecast(calls))
-    body = client.get("/api/forecast").json()
+def test_forecast_endpoint_plans_windows(client):
+    """Posted hourly data comes back as per-hour status, the GO window, and when it worsens."""
+    body = client.post("/api/forecast", json={"hourly": om_hourly([GO, GO, STOP])}).json()
     assert [h["status"] for h in body["hours"]] == ["GO", "GO", "STOP"]
     assert body["worsens"]["status"] == "STOP" and body["next_go"]["start"] == body["hours"][0]["time"]
     assert datetime.fromisoformat(body["hours"][0]["time"]).tzinfo is not None
-    assert body["location"] == {"lat": main.ORCHARD[0], "lon": main.ORCHARD[1]}
-    client.get("/api/forecast")
-    client.get("/api/forecast?lat=1&lon=2")
-    assert calls == [main.ORCHARD, (1.0, 2.0)]
 
 
-def test_forecast_endpoint_without_window(client, monkeypatch):
-    """With no GO hour and STOP now, next_go and worsens are null."""
-    monkeypatch.setattr(main, "hourly_forecast", lambda lat, lon: [hour(0, STOP)])
-    body = client.get("/api/forecast").json()
+def test_forecast_endpoint_without_window(client):
+    """With STOP now and no GO hour, next_go and worsens are null."""
+    body = client.post("/api/forecast", json={"hourly": om_hourly([STOP])}).json()
     assert body["next_go"] is None and body["worsens"] is None
 
 
-def test_forecast_endpoint_errors(client, monkeypatch):
-    """Unknown pesticide is 404; a failed forecast fetch is 502."""
-    assert client.get("/api/forecast?pesticide=nope").status_code == 404
-
-    def boom(lat, lon):
-        raise OSError("down")
-    monkeypatch.setattr(main, "hourly_forecast", boom)
-    assert client.get("/api/forecast").status_code == 502
+def test_forecast_endpoint_errors(client):
+    """Unknown pesticide is 404; malformed forecast data is 422."""
+    assert client.post("/api/forecast", json={"pesticide": "nope", "hourly": om_hourly([GO])}).status_code == 404
+    assert client.post("/api/forecast", json={"hourly": {"time": ["x"]}}).status_code == 422

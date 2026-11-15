@@ -29,7 +29,7 @@ from spraywait.weather import (SCENARIOS, FarmSource, FarmStationStore, MesonetF
                                PublicSource, SimulatedSource, StationSource, WeatherSource,
                                parse_station_payload)
 from spraywait.weather.mesonet import DEFAULT_CSV
-from spraywait.weather.public import hourly_forecast
+from spraywait.weather.public import forecast_url, parse_hourly
 from spraywait.windows import plan_windows
 
 WEB_DIR = Path(__file__).resolve().parent.parent / "web"
@@ -43,8 +43,6 @@ _last_logged: dict[tuple, tuple] = {}
 _feed: MesonetFeed | None = None
 # Orchard location for the forecast (default: an almond orchard near Modesto, CA, Central Valley).
 ORCHARD = (float(os.environ.get("ORCHARD_LAT", 37.64)), float(os.environ.get("ORCHARD_LON", -120.99)))
-FORECAST_TTL = timedelta(minutes=30)
-_forecasts: dict[tuple, tuple] = {}
 
 
 def _sync_station() -> None:
@@ -192,35 +190,34 @@ def _with_offset(ts: str) -> str:
     return datetime.fromisoformat(ts).astimezone().isoformat()
 
 
-def _forecast(lat: float, lon: float) -> list:
-    """Hourly forecast for the next 24 h, cached per location for FORECAST_TTL."""
-    key = (round(lat, 2), round(lon, 2))
-    hit = _forecasts.get(key)
-    if hit and datetime.now() - hit[0] < FORECAST_TTL:
-        return hit[1]
-    readings = hourly_forecast(lat, lon)
-    _forecasts[key] = (datetime.now(), readings)
-    return readings
+class ForecastRequest(BaseModel):
+    pesticide: str | None = None
+    nozzle: str | None = None
+    hourly: dict
 
 
-@app.get("/api/forecast")
-def forecast(pesticide: str | None = None, nozzle: str | None = None,
-             lat: float | None = None, lon: float | None = None) -> dict:
-    """Next 24 h of forecast spray status at the orchard, the next GO window, and when it next gets worse."""
+@app.get("/api/orchard")
+def orchard() -> dict:
+    """Orchard location and the forecast URL the browser fetches (from its own IP, not the shared host's)."""
+    lat, lon = ORCHARD
+    return {"lat": lat, "lon": lon, "forecast_url": forecast_url(lat, lon)}
+
+
+@app.post("/api/forecast")
+def forecast(req: ForecastRequest) -> dict:
+    """Run the checks on each forecast hour the browser sent: per-hour status, next GO window, next worsening."""
     try:
-        profile = setup.resolve(pesticide, nozzle)
+        profile = setup.resolve(req.pesticide, req.nozzle)
     except KeyError as e:
         raise HTTPException(404, str(e.args[0])) from None
-    lat, lon = (lat, lon) if lat is not None and lon is not None else ORCHARD
     try:
-        plan = plan_windows(_forecast(lat, lon), profile)
-    except (OSError, KeyError, ValueError) as e:
-        raise HTTPException(502, f"forecast unavailable: {e}") from None
+        plan = plan_windows(parse_hourly(req.hourly), profile)
+    except ValueError as e:
+        raise HTTPException(422, str(e)) from None
     t = lambda ts: ts.astimezone().isoformat()
     hour = lambda h: {"time": t(h["time"]), "status": h["status"].value, "checks": h["checks"]}
     nxt, worse = plan["next_go"], plan["worsens"]
     return {
-        "location": {"lat": lat, "lon": lon},
         "hours": [hour(h) for h in plan["hours"]],
         "next_go": {"start": t(nxt["start"]), "end": t(nxt["end"])} if nxt else None,
         "worsens": hour(worse) if worse else None,
