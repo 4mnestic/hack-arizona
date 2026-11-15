@@ -11,10 +11,33 @@ Pesticide spray can drift beyond the orchard onto neighboring crops, workers, ho
 ## What it does
 
 - **Reads weather at two heights** (about 5 ft and 30 ft) from the orchard's station, plus the pesticide and nozzle being used.
-- **Says GO, CAUTION, or STOP right now**, with the reasons in plain language: inversion, wind too low or too high, wind changing with height, heat and volatility limits.
+- **Says GO, CAUTION, or STOP right now**, with the reasons in plain language (inversion, wind too low or too high, wind changing with height, heat and volatility limits).
 - **Alerts** when conditions get worse (GO → CAUTION/STOP, CAUTION → STOP), on screen and as a phone notification.
 - **Plans ahead:** a 24-hour forecast strip shows the next safe spray window, or warns when conditions are expected to turn bad.
 - **Keeps a record:** a time-stamped log of every reading, decision, and what triggered it, exportable as CSV.
+
+## Challenge goals
+
+**Must-haves:** all met.
+
+| Goal | How SprayWait meets it |
+|---|---|
+| Read temperature and wind at two or more heights | 5 ft and 30 ft from the orchard station: a real recorded Mesonet day on Live, simulated scenarios on Demo. |
+| Detect an inversion (upper warmer than lower) | STOP whenever 30 ft is warmer than 5 ft, graded weak, moderate, or strong; CAUTION when one may be forming. |
+| Flag wind below 3 mph or above 10 mph | STOP outside the pesticide's label limits (3–10 mph by default), CAUTION within 1 mph of either limit. |
+| Flag large wind speed or direction differences between heights | CAUTION at 5 mph or 45°, STOP at 8 mph or 90°. |
+| Clear status with plain-language reasons | GO, CAUTION, or STOP with every reason listed, using the measured numbers. |
+| Time-stamped log of readings and what triggered each alert | Log page lists every reading, status, and trigger; downloadable as CSV. |
+
+**Stretch goals**
+
+| Goal | Status |
+|---|---|
+| Factor in pesticide properties and application details | Done. 47 pesticides with label temperature limits and volatility; the nozzle sets droplet size. |
+| Use forecasts to predict the next safe window or warn before conditions turn bad | Done. The same checks run on each hour of a 24-hour Open-Meteo forecast, giving the next GO window and an early warning. Open-Meteo, not the National Weather Service, because the NWS hourly forecast has no temperature aloft and so cannot show an inversion. |
+| Monitor during and after spraying | Partly. The app rechecks every minute against readings that arrive every 5 minutes, and alerts as soon as conditions get worse, so it works while spraying. Watching volatile products after spraying is not built yet. |
+| Alerts by text or push notification | Partly. Phone notification and in-app banner while the app is open. Notifications to a closed app, and text alerts, are not built yet. |
+| Physical sensor prototype | Not built. Stations post readings to an authenticated API; the Mesonet replay tool already does this over the network, so a real mast would only replace the data source. |
 
 ## Demo
 
@@ -41,11 +64,14 @@ Pesticide + nozzle           ─┼─► Checks ─► GO / CAUTION / STOP + re
 Hourly forecast (24 h)       ─┘            (same checks per hour) ─► Next spray window
 ```
 
-- **Inversion:** temperature at 30 ft minus 5 ft. Warmer aloft is STOP; nearly equal is CAUTION (mixing has stopped, an inversion may be forming).
-- **Wind speed:** below 3 mph or above 10 mph is flagged (common guidance; the label's limits come first).
-- **Wind shear:** large differences in speed or direction between heights are flagged.
-- **Pesticide:** droplet size from the nozzle, plus heat and volatility limits, tighten the risk.
+- **Inversion:** temperature at 30 ft minus 5 ft. Any warming aloft is STOP, graded weak (under 1°F), moderate, or strong (3°F or more, per NDSU Extension). Nearly equal temperatures with light ground wind (under 7 mph, per UC ANR) are CAUTION: an inversion may be forming. From 2 pm to 9 am, a weaker-than-normal drop also gives an early CAUTION. Time of day only ever adds caution.
+- **Wind speed:** below 3 mph or above 10 mph is STOP (common guidance; the label's limits come first), and within 1 mph of a limit is CAUTION.
+- **Wind shear:** speed differences of 5 mph or more between heights, or direction differences of 45° or more, are CAUTION; 8 mph or 90° is STOP.
+- **Pesticide:** label temperature limits and volatility tighten the risk. The nozzle sets droplet size; with no nozzle chosen, droplets are assumed fine, the worst case for drift.
 - **Status:** the most severe flag wins and every reason is shown. Missing or stale data is never GO.
+- **Risk score (0–100):** ranks how bad it is within each status (GO 0, CAUTION 20–69, STOP 70–100), so the score never contradicts the status. It ranks risk; it is not a drift probability. It is in the API response and the log CSV, not yet on screen.
+
+Every threshold, its source, and the reasoning behind the ones no source gives a number for are in [docs/LOGIC.md](docs/LOGIC.md).
 
 ## Decision rules
 
@@ -98,7 +124,9 @@ Nuyttens, D., Baetens, K., De Schampheleire, M., & Sonck, B. (2007). Effect of n
 Al Heidary, M., Douzals, J. P., Sinfort, C., & Vallet, A. (2014). Influence of spray characteristics on potential spray drift of field crop sprayers: A literature review. Crop Protection, 63, 120–130. https://doi.org/10.1016/j.cropro.2014.05.006
 
 Holtslag, A. A. M., Svensson, G., Baas, P., et al. (2013). Stable atmospheric boundary layers and diurnal cycles: Challenges for weather and climate models. Bulletin of the American Meteorological Society, 94(11), 1691–1706. https://doi.org/10.1175/BAMS-D-11-00187.1
+
 Open-Meteo. (n.d.). Weather forecast API documentation. https://open-meteo.com/en/docs
+
 UC ANR. (n.d.). Surface inversions cause spray drift. Topics in Subtropics, University of California Agriculture and Natural Resources. https://ucanr.edu/blog/topics-subtropics/article/surface-inversions-cause-spray-drift
 
 ## Run it

@@ -1,5 +1,5 @@
 {
-  "name": "Spray or Wait",
+  "name": "SprayWait",
   "short_name": "SprayWait",
   "description": "Go, Caution, or Stop for orchard pesticide spraying, with the reasons why.",
   "start_url": "/",

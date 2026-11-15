@@ -169,7 +169,7 @@ def test_unknown_inputs_404(client, payload):
 @pytest.mark.parametrize("path", ["/", "/demo"])
 def test_serves_pwa_pages(client, path):
     """Both the live and demo URLs serve the PWA page."""
-    assert "Spray or Wait" in client.get(path).text
+    assert "SprayWait" in client.get(path).text
 
 
 def test_manifest(client):
