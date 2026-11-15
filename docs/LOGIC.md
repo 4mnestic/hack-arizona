@@ -1,6 +1,6 @@
 # Decision logic
 
-Every rule the tool uses to turn weather and spray choices into GO, CAUTION or STOP. Plain words first, exact numbers in the tables. For the file layout see FLOW.md; for setup and usage see DEVELOPMENT.md.
+Every rule the tool uses to turn weather and spray choices into GO, CAUTION or STOP. Plain words first, exact numbers in the tables. For the file layout, flow diagram, setup and usage see DEVELOPMENT.md.
 
 Advisory only. The pesticide label is the law.
 

@@ -73,6 +73,23 @@ Hourly forecast (24 h)       ─┘            (same checks per hour) ─► Nex
 
 Every threshold, its source, and the reasoning behind the ones no source gives a number for are in [docs/LOGIC.md](docs/LOGIC.md).
 
+## Decision rules
+
+Five checks run on every reading. The worst warning wins: any STOP means **STOP**, any CAUTION means **CAUTION**, otherwise **GO**. Every reason is shown. A risk score (0 = GO, 20–69 = CAUTION, 70–100 = STOP) ranks how bad it is without changing the status.
+
+| Check | STOP | CAUTION | Basis |
+|---|---|---|---|
+| **Data quality** | No data | Reading over 15 min old, or only one height | Fail safe: missing data is never GO |
+| **Inversion** (30 ft minus 5 ft) | Warmer aloft. Named weak (<1°F), moderate, strong (≥3°F) | Nearly equal (within 0.5°F) with ground wind under 7 mph: mixing has stopped. Also, 2 pm–9 am with light wind, air aloft only 0.5–1°F cooler | "If you suspect an inversion, don't spray" (UC ANR). ≥3°F = strongest class (NDSU). 7 mph light-wind rule (UC ANR) |
+| **Wind speed** (every height) | Below 3 or above 10 mph | Within 1 mph of either limit | Common guidance; the label's limits come first |
+| **Wind shear** (speed) | Aloft ≥8 mph stronger than ground | 5–8 mph stronger | Ground wind doesn't show the air the spray rises into |
+| **Wind shear** (direction) | ≥90° apart | 45–90° apart | Direction can flip up to 180° inside an inversion (NDSU) |
+| **Pesticide** | Above the label's max temperature. Highly volatile at ≥85°F | Highly volatile at 75–85°F. Moderately volatile at ≥85°F. Fine droplets with wind ≥7 mph | Vapor drift rises with heat; droplets ≤200 µm fall only inches per second (NDSU) |
+
+- If no nozzle is chosen, droplets are assumed fine, the worst case for drift.
+- Time of day can only add caution, never remove it.
+- Cutoffs without a published number are stated design choices that lean toward caution; none can turn a STOP into a GO. Every rule and its source is in [docs/LOGIC.md](docs/LOGIC.md).
+
 ## Science
 
 ### **Temperature Inversions (Primary Drift Risk)**
