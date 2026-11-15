@@ -50,7 +50,7 @@ Status model → GO / CAUTION / STOP + reasons
 
 **Done (must-have, judged):** time-stamped log in the app (`/log`). Record every decision (readings, status, what triggered each alert) with `spraywait/log.py`, and show it in a log view. The demo must show the log.
 
-**Then (helps the tiebreaker):** next safe spray window timeline. Run the checks hour by hour over the coming day and show a GO/CAUTION/STOP strip with "next GO window: 9am–1pm". Use the dummy station's day cycle first, then NWS hourly forecasts.
+**Done (helps the tiebreaker):** next safe spray window timeline. Run the checks hour by hour over the coming day and show a GO/CAUTION/STOP strip with "next GO window: 9am–1pm". Built on Open-Meteo hourly forecasts (NWS hourly has no temperature aloft, so it can't see inversions).
 
 **Stretch:**
 - ML-based models

@@ -101,6 +101,74 @@ function setupAlerts() {
   });
 }
 
+// Next 24 h forecast strip and next spray window.
+const hourLabel = (iso) => new Date(iso).toLocaleTimeString([], { hour: "numeric" });
+const dayHour = (iso) => new Date(iso).toLocaleString([], { weekday: "short", hour: "numeric", minute: "2-digit" });
+const dayLabel = (iso) => new Date(iso).toLocaleDateString([], { weekday: "short" });
+const checkNames = (c) => c.map((x) => x.replace(/_/g, " ")).join(", ");
+
+function forecastSummary(f) {
+  const now = f.hours[0]?.status;
+  if (!now) return "No forecast available.";
+  if (now === "GO") {
+    return f.worsens
+      ? `Good to spray now. Expected to turn ${f.worsens.status} around ${dayHour(f.worsens.time)} (${checkNames(f.worsens.checks)}).`
+      : "Good to spray for the next 24 hours.";
+  }
+  if (f.next_go) return `Next GO window: ${dayLabel(f.next_go.start)} ${hourLabel(f.next_go.start)} – ${hourLabel(f.next_go.end)}.`;
+  return "No GO window in the next 24 hours.";
+}
+
+function renderForecast(f) {
+  $("forecast").hidden = false;
+  $("forecast-summary").textContent = forecastSummary(f);
+  const detail = (h) => `${dayHour(h.time)}: ${h.status}${h.checks.length ? ` (${checkNames(h.checks)})` : ""}`;
+  $("forecast-strip").replaceChildren(...f.hours.map((h) => {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.className = h.status;
+    b.setAttribute("role", "listitem");
+    b.setAttribute("aria-label", detail(h));
+    b.title = detail(h);
+    b.addEventListener("click", () => {
+      $("forecast-strip").querySelectorAll(".sel").forEach((x) => x.classList.remove("sel"));
+      b.classList.add("sel");
+      $("forecast-detail").textContent = detail(h);
+    });
+    return b;
+  }));
+  $("forecast-ticks").replaceChildren(...f.hours.map((h, i) => {
+    const s = document.createElement("span");
+    s.textContent = i % 6 === 0 ? hourLabel(h.time) : "";
+    return s;
+  }));
+}
+
+// The browser fetches the forecast itself (its own IP; the shared host IP gets rate-limited),
+// at most every 30 min, then the server runs the checks on it.
+const FORECAST_TTL_MS = 30 * 60_000;
+let hourly = null, hourlyAt = 0, lastForecast = null;
+
+async function fetchHourly() {
+  if (hourly && Date.now() - hourlyAt < FORECAST_TTL_MS) return hourly;
+  const { forecast_url } = await api("/api/orchard");
+  const res = await fetch(forecast_url);
+  if (!res.ok) throw new Error(`forecast ${res.status}`);
+  hourly = (await res.json()).hourly;
+  hourlyAt = Date.now();
+  return hourly;
+}
+
+async function updateForecast(pesticide, nozzle) {
+  try {
+    lastForecast = await api("/api/forecast", { pesticide, nozzle, hourly: await fetchHourly() });
+    renderForecast(lastForecast);
+  } catch {
+    // Keep the last good forecast on a hiccup; with none, hide it (the live decision still stands).
+    if (!lastForecast) $("forecast").hidden = true;
+  }
+}
+
 function locate() {
   if (coords) return Promise.resolve(coords);
   return new Promise((resolve, reject) => {
@@ -130,6 +198,7 @@ async function update() {
     const s = scenarios.find((x) => x.id === $("scenario").value);
     $("scenario-desc").textContent = s?.description || "";
   }
+  updateForecast(pesticide, nozzle);
   try {
     render(await api("/api/decision", { pesticide, nozzle, ...(await weatherQuery()) }));
   } catch (e) {

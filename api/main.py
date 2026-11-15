@@ -29,6 +29,8 @@ from spraywait.weather import (SCENARIOS, FarmSource, FarmStationStore, MesonetF
                                PublicSource, SimulatedSource, StationSource, WeatherSource,
                                parse_station_payload)
 from spraywait.weather.mesonet import DEFAULT_CSV
+from spraywait.weather.public import forecast_url, parse_hourly
+from spraywait.windows import plan_windows
 
 WEB_DIR = Path(__file__).resolve().parent.parent / "web"
 DEFAULT_SCENARIO = "evening_inversion"
@@ -39,6 +41,8 @@ farm = FarmStationStore()
 log = DecisionLog(Path(os.environ.get("SPRAY_LOG_PATH", "spray_log.jsonl")))
 _last_logged: dict[tuple, tuple] = {}
 _feed: MesonetFeed | None = None
+# Orchard location for the forecast (default: an almond orchard near Modesto, CA, Central Valley).
+ORCHARD = (float(os.environ.get("ORCHARD_LAT", 37.64)), float(os.environ.get("ORCHARD_LON", -120.99)))
 
 
 def _sync_station() -> None:
@@ -184,6 +188,40 @@ def _log_if_new(req, reading, pesticide, result) -> None:
 def _with_offset(ts: str) -> str:
     """Stored times are naive server-local; add the offset so browsers show local time."""
     return datetime.fromisoformat(ts).astimezone().isoformat()
+
+
+class ForecastRequest(BaseModel):
+    pesticide: str | None = None
+    nozzle: str | None = None
+    hourly: dict
+
+
+@app.get("/api/orchard")
+def orchard() -> dict:
+    """Orchard location and the forecast URL the browser fetches (from its own IP, not the shared host's)."""
+    lat, lon = ORCHARD
+    return {"lat": lat, "lon": lon, "forecast_url": forecast_url(lat, lon)}
+
+
+@app.post("/api/forecast")
+def forecast(req: ForecastRequest) -> dict:
+    """Run the checks on each forecast hour the browser sent: per-hour status, next GO window, next worsening."""
+    try:
+        profile = setup.resolve(req.pesticide, req.nozzle)
+    except KeyError as e:
+        raise HTTPException(404, str(e.args[0])) from None
+    try:
+        plan = plan_windows(parse_hourly(req.hourly), profile)
+    except ValueError as e:
+        raise HTTPException(422, str(e)) from None
+    t = lambda ts: ts.astimezone().isoformat()
+    hour = lambda h: {"time": t(h["time"]), "status": h["status"].value, "checks": h["checks"]}
+    nxt, worse = plan["next_go"], plan["worsens"]
+    return {
+        "hours": [hour(h) for h in plan["hours"]],
+        "next_go": {"start": t(nxt["start"]), "end": t(nxt["end"])} if nxt else None,
+        "worsens": hour(worse) if worse else None,
+    }
 
 
 @app.get("/api/log")
