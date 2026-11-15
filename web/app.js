@@ -10,6 +10,8 @@ const PUBLIC = "__public__";
 const STATION = "__station__";
 const REFRESH_MS = 60_000;
 let scenarios = [];
+let lastStatus = null;
+const RANK = { GO: 0, CAUTION: 1, STOP: 2 };
 let coords = null;
 
 async function api(path, body) {
@@ -36,6 +38,9 @@ function showError(word, msg) {
 
 function render(data) {
   const d = data.decision;
+  if (lastStatus && RANK[d.status] > RANK[lastStatus]) alertChange(lastStatus, d);  // only when it gets worse
+  else if (lastStatus && RANK[d.status] < RANK[lastStatus]) $("alert").hidden = true;  // improved: old alert is stale
+  lastStatus = d.status;
   $("status").className = `status ${d.status}`;
   $("status").querySelector(".status-word").textContent = d.status;
   $("status").querySelector(".status-sub").textContent = SUBTITLE[d.status];
@@ -66,6 +71,34 @@ function render(data) {
     }
     return tr;
   }));
+}
+
+// Alert when conditions worsen (GO→CAUTION/STOP, CAUTION→STOP): in-page banner, vibration (Android), and a system notification if allowed.
+const canNotify = "Notification" in window && "serviceWorker" in navigator;
+
+function alertChange(from, d) {
+  const title = `${from} → ${d.status}: ${SUBTITLE[d.status]}`;
+  const text = d.flags[0]?.reason || d.reasons[0] || "";
+  $("alert").className = `alert ${d.status}`;
+  $("alert-title").textContent = title;
+  $("alert-text").textContent = text;
+  $("alert").hidden = false;
+  navigator.vibrate?.([200, 100, 200]);
+  if (canNotify && Notification.permission === "granted") {
+    navigator.serviceWorker.ready
+      .then((reg) => reg.showNotification(title, { body: text, tag: "spray-status", renotify: true, icon: "/icons/icon-192.png" }))
+      .catch(() => {});
+  }
+}
+
+function setupAlerts() {
+  $("alert-close").addEventListener("click", () => { $("alert").hidden = true; });
+  if (!canNotify || Notification.permission !== "default") return;
+  $("enable-alerts").hidden = false;
+  $("enable-alerts").addEventListener("click", async () => {
+    await Notification.requestPermission().catch(() => {});
+    $("enable-alerts").hidden = true;
+  });
 }
 
 function locate() {
@@ -123,6 +156,7 @@ async function init() {
   fillSelect($("nozzle"), nozzles.map((n) => ({ value: n.name, label: `${n.name} (${n.asabe_class})` })), store.get("nozzle"));
   if (DEMO) fillSelect($("scenario"), scenarios.map((s) => ({ value: s.id, label: s.title })), store.get("scenario"));
   for (const id of ["pesticide", "nozzle", "scenario"]) $(id).addEventListener("change", update);
+  setupAlerts();
   await update();
   if (!DEMO) setInterval(update, REFRESH_MS);
 }

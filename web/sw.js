@@ -1,5 +1,5 @@
 // Caches the app shell so it opens offline; API calls always go to the network.
-const CACHE = "spraywait-v4";
+const CACHE = "spraywait-v5";
 const SHELL = ["/", "/demo", "/log", "/log.js", "/station", "/station.js", "/index.html", "/style.css", "/app.js", "/manifest.json", "/icons/icon-192.png", "/icons/icon-512.png"];
 
 self.addEventListener("install", (e) => {
@@ -26,5 +26,14 @@ self.addEventListener("fetch", (e) => {
         return res;
       })
       .catch(() => caches.match(e.request)),
+  );
+});
+
+// Tapping an alert notification opens (or focuses) the app.
+self.addEventListener("notificationclick", (e) => {
+  e.notification.close();
+  e.waitUntil(
+    self.clients.matchAll({ type: "window", includeUncontrolled: true }).then((wins) =>
+      wins.length ? wins[0].focus() : self.clients.openWindow("/")),
   );
 });
