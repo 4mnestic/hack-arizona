@@ -26,10 +26,14 @@
 
     <section class="controls">
       <label>Pesticide
-        <select id="pesticide"></select>
+        <input id="pesticide" list="pesticide-list" autocomplete="off" spellcheck="false" placeholder="Type or pick a pesticide">
+        <datalist id="pesticide-list"></datalist>
+        <span id="pesticide-err" class="field-err" hidden></span>
       </label>
       <label>Nozzle
-        <select id="nozzle"></select>
+        <input id="nozzle" list="nozzle-list" autocomplete="off" spellcheck="false" placeholder="Type or pick a nozzle">
+        <datalist id="nozzle-list"></datalist>
+        <span id="nozzle-err" class="field-err" hidden></span>
       </label>
       <label id="scenario-field" hidden>Conditions (demo)
         <select id="scenario"></select>

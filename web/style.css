@@ -42,7 +42,7 @@ h2 { font-size: 0.85rem; text-transform: uppercase; letter-spacing: .06em; color
 
 .controls { display: grid; gap: 10px; }
 .controls label { display: grid; gap: 4px; font-size: 0.85rem; color: var(--muted); }
-select {
+select, .controls input {
   width: 100%;
   min-height: 48px;
   font: inherit;
@@ -186,3 +186,4 @@ details > summary { cursor: pointer; min-height: 44px; display: flex; align-item
 .forecast-strip button.sel { outline: 2px solid var(--text); outline-offset: 1px; }
 .forecast-ticks { display: grid; grid-template-columns: repeat(24, minmax(0, 1fr)); margin-top: 4px; }
 .forecast-ticks span { white-space: nowrap; }
+.field-err { color: var(--stop); font-size: 0.8rem; }

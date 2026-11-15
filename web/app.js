@@ -22,6 +22,43 @@ async function api(path, body) {
   return res.json();
 }
 
+// Pesticide and nozzle are typed (with suggestions); a name only counts if it matches a known one.
+const known = { pesticide: [], nozzle: [] };
+const applied = { pesticide: null, nozzle: null };
+
+function fillList(kind, items, saved) {
+  known[kind] = items.map((i) => i.value);
+  $(`${kind}-list`).replaceChildren(...items.map(({ value, label }) => {
+    const o = document.createElement("option");
+    o.value = value;
+    if (label !== value) o.label = label;
+    return o;
+  }));
+  $(kind).value = known[kind].includes(saved) ? saved : known[kind][0] || "";
+  applied[kind] = $(kind).value;
+}
+
+/** The known name matching what was typed (ignoring case and extra spaces), or null. */
+function canonical(kind) {
+  const typed = $(kind).value.trim().replace(/\s+/g, " ").toLowerCase();
+  return known[kind].find((n) => n.toLowerCase() === typed) ?? null;
+}
+
+function setupTyped(kind) {
+  const input = $(kind);
+  // Clear on focus so the full suggestion list shows; put the last good value back if nothing is chosen.
+  input.addEventListener("focus", () => { input.placeholder = applied[kind] || input.placeholder; input.value = ""; });
+  input.addEventListener("blur", () => { if (!input.value.trim()) input.value = applied[kind] || ""; });
+  const apply = (final) => {
+    const name = canonical(kind);
+    $(`${kind}-err`).hidden = !!name || !final || !input.value.trim();
+    $(`${kind}-err`).textContent = `Unknown ${kind}. Pick one from the list.`;
+    if (name && name !== applied[kind]) { input.value = name; applied[kind] = name; update(); }
+  };
+  input.addEventListener("input", () => apply(false));  // picking a suggestion applies at once
+  input.addEventListener("change", () => apply(true));
+}
+
 function fillSelect(sel, items, saved) {
   sel.replaceChildren(...items.map(({ value, label }) => new Option(label, value)));
   if (saved && items.some((i) => i.value === saved)) sel.value = saved;
@@ -190,7 +227,7 @@ async function weatherQuery() {
 }
 
 async function update() {
-  const pesticide = $("pesticide").value, nozzle = $("nozzle").value;
+  const pesticide = applied.pesticide, nozzle = applied.nozzle;
   store.set("pesticide", pesticide);
   store.set("nozzle", nozzle);
   if (DEMO) {
@@ -221,10 +258,12 @@ async function init() {
   scenarios = [
     { id: STATION, title: "Farm station (simulated, live clock)", description: "A dummy 5 ft / 30 ft orchard mast whose weather follows the time of day: inversions at night, mixing by day." },
     ...scen, { id: PUBLIC, title: "Public forecast near me", description: "Current forecast-model weather at your location (2 m and 80 m)." }];
-  fillSelect($("pesticide"), pesticides.map((p) => ({ value: p.name, label: p.category ? `${p.name} (${p.category})` : p.name })), store.get("pesticide"));
-  fillSelect($("nozzle"), nozzles.map((n) => ({ value: n.name, label: `${n.name} (${n.asabe_class})` })), store.get("nozzle"));
+  fillList("pesticide", pesticides.map((p) => ({ value: p.name, label: p.category ? `${p.name} (${p.category})` : p.name })), store.get("pesticide"));
+  fillList("nozzle", nozzles.map((n) => ({ value: n.name, label: `${n.name} (${n.asabe_class})` })), store.get("nozzle"));
   if (DEMO) fillSelect($("scenario"), scenarios.map((s) => ({ value: s.id, label: s.title })), store.get("scenario"));
-  for (const id of ["pesticide", "nozzle", "scenario"]) $(id).addEventListener("change", update);
+  setupTyped("pesticide");
+  setupTyped("nozzle");
+  $("scenario").addEventListener("change", update);
   setupAlerts();
   await update();
   if (!DEMO) setInterval(update, REFRESH_MS);
