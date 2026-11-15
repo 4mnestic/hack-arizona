@@ -1,6 +1,6 @@
 # Development notes
 
-Setup, usage, and layout for the `spraywait` package. (Project overview is in README.md, team plan in docs/PLAN.md, every rule and cutoff in docs/LOGIC.md.)
+Setup, usage, and layout for the `spraywait` package. (Project overview is in README.md, every rule and cutoff in docs/LOGIC.md.)
 
 ## Setup
 
