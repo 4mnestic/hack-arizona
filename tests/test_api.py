@@ -4,6 +4,7 @@ import pytest
 from fastapi.testclient import TestClient
 
 import api.main as main
+from spraywait.log import DecisionLog
 from spraywait.weather import FarmStationStore, Level, Reading
 
 KEY = "test-key"
@@ -25,10 +26,12 @@ def payload(sensor_list=None, **extra):
 
 
 @pytest.fixture
-def client(monkeypatch):
+def client(monkeypatch, tmp_path):
     monkeypatch.setenv("FARM_API_KEY", KEY)
     monkeypatch.setenv("FARM_WEATHER", "push")
     monkeypatch.setattr(main, "farm", FarmStationStore())
+    monkeypatch.setattr(main, "log", DecisionLog(tmp_path / "log.jsonl"))
+    monkeypatch.setattr(main, "_last_logged", {})
     return TestClient(main.app)
 
 
@@ -171,3 +174,74 @@ def test_serves_pwa_pages(client, path):
 def test_manifest(client):
     """The web app manifest is served and installable as standalone."""
     assert client.get("/manifest.json").json()["display"] == "standalone"
+
+
+def decide_live(client, **body):
+    return client.post("/api/decision", json=body).json()
+
+
+def test_live_decision_is_logged_once_per_reading(client):
+    """Repeated checks of the same reading (page refresh) add one log entry, not many."""
+    push(client)
+    decide_live(client, pesticide="Captan")
+    decide_live(client, pesticide="Captan")
+    entries = client.get("/api/log").json()
+    assert len(entries) == 1
+    assert entries[0]["mode"] == "live" and entries[0]["pesticide"] == "Captan"
+
+
+def test_no_data_is_logged_once(client):
+    """The fail-safe 'no data' STOP is logged once, not on every refresh."""
+    decide_live(client)
+    decide_live(client)
+    entries = client.get("/api/log").json()
+    assert len(entries) == 1 and entries[0]["decision"]["status"] == "STOP"
+
+
+def test_log_marks_status_changes(client):
+    """A new reading that flips the status is flagged with the previous status (an alert)."""
+    decide_live(client)  # no data: STOP
+    push(client)
+    decide_live(client)  # clear: GO
+    newest, oldest = client.get("/api/log").json()
+    assert newest["decision"]["status"] == "GO" and newest["changed_from"] == "STOP"
+    assert oldest["changed_from"] is None
+    assert len(client.get("/api/log?changes_only=true").json()) == 1
+
+
+def test_log_separates_live_and_demo(client):
+    """Demo checks go to the demo log only."""
+    decide_live(client, source="simulated", scenario="evening_inversion")
+    assert client.get("/api/log").json() == []
+    demo = client.get("/api/log?mode=demo").json()
+    assert len(demo) == 1 and demo[0]["mode"] == "demo"
+
+
+def test_log_times_have_offset_and_limit(client):
+    """Log times carry a UTC offset; limit returns the newest N."""
+    for s in ["clear_midday", "too_windy", "dead_calm"]:
+        decide_live(client, source="simulated", scenario=s)
+    items = client.get("/api/log?mode=demo&limit=2").json()
+    assert len(items) == 2
+    assert datetime.fromisoformat(items[0]["reading"]["timestamp"]).tzinfo is not None
+    assert datetime.fromisoformat(items[0]["logged_at"]).tzinfo is not None
+
+
+def test_log_csv(client):
+    """CSV export has a header with status and triggers, one row per entry."""
+    decide_live(client, source="simulated", scenario="evening_inversion")
+    res = client.get("/api/log.csv?mode=demo")
+    assert res.headers["content-type"].startswith("text/csv")
+    assert "spray-log-demo.csv" in res.headers["content-disposition"]
+    header, row = res.text.strip().splitlines()
+    assert "status" in header and "triggered" in header and "STOP" in row
+
+
+def test_log_csv_empty(client):
+    """An empty log still returns a CSV header."""
+    assert client.get("/api/log.csv").text.strip() == "time,status"
+
+
+def test_log_page_served(client):
+    """The log page is served at /log."""
+    assert "Spray log" in client.get("/log").text

@@ -222,3 +222,6 @@ __marimo__/
 # Claude Code (personal, not shared)
 .claude/settings.local.json
 CLAUDE.local.md
+
+# Spray decision log (runtime data)
+spray_log.jsonl

@@ -100,3 +100,35 @@ footer { margin-top: 28px; text-align: center; }
 .center { text-align: center; margin: 8px 0 0; }
 .badge { font-size: 0.7rem; vertical-align: middle; background: var(--caution); color: var(--on-caution); border-radius: 6px; padding: 2px 6px; letter-spacing: .05em; }
 header a { color: var(--muted); }
+
+/* Log page */
+.tabs { display: flex; gap: 8px; margin: 4px 0 12px; }
+.tabs a {
+  flex: 1; text-align: center; padding: 10px; border-radius: 10px; text-decoration: none;
+  color: var(--text); background: var(--card); border: 1px solid var(--line);
+}
+.tabs a.active { background: var(--text); color: var(--bg); border-color: var(--text); }
+.log-tools { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 12px; }
+.check { display: flex; align-items: center; gap: 8px; min-height: 44px; }
+.check input { width: 20px; height: 20px; }
+.button {
+  display: inline-flex; align-items: center; min-height: 44px; padding: 0 14px; border-radius: 10px;
+  background: var(--card); border: 1px solid var(--line); color: var(--text); text-decoration: none; font-size: 0.9rem;
+}
+.entries { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+.entry {
+  background: var(--card); border: 1px solid var(--line); border-left: 6px solid var(--go);
+  border-radius: 10px; padding: 10px 12px; display: grid; gap: 4px; min-width: 0; overflow-wrap: anywhere;
+}
+.entry.CAUTION { border-left-color: var(--caution); }
+.entry.STOP { border-left-color: var(--stop); }
+.entry.changed { box-shadow: 0 0 0 2px var(--line); }
+.entry-top { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.pill { font-size: 0.75rem; font-weight: 700; padding: 2px 8px; border-radius: 999px; color: var(--on-status); background: var(--go); }
+.pill.CAUTION { background: var(--caution); color: var(--on-caution); }
+.pill.STOP { background: var(--stop); }
+.change { font-weight: 700; margin-left: auto; }
+.entry details summary { cursor: pointer; min-height: 32px; display: flex; align-items: center; }
+.entry .reasons { margin-top: 6px; }
+.tiny { font-size: 0.75rem; }
+header nav { display: flex; gap: 14px; }

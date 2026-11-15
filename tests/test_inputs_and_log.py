@@ -64,3 +64,39 @@ def test_log_appends_and_reads_back(tmp_path, now):
 
     log.clear()
     assert log.entries() == []
+
+
+def test_log_history_marks_changes_per_stream(tmp_path, now):
+    """changed_from tracks each pesticide/nozzle stream separately and filters by mode."""
+    from spraywait.pesticides.db import Pesticide
+    log = DecisionLog(tmp_path / "log.jsonl")
+    calm = make_reading((60, 1, 0), (62, 1, 0))
+    clear = make_reading((70, 5, 300), (68.6, 6, 305))
+    a, b = Pesticide(name="A"), Pesticide(name="B", nozzle="N")
+    for r, p, mode in [(calm, a, "live"), (calm, b, "live"), (clear, a, "live"), (clear, a, "demo")]:
+        log.append(r, p, decide(r, p, now=r.timestamp), mode=mode)
+    live = log.history("live")
+    assert [e["changed_from"] for e in live] == [None, None, "STOP"]
+    assert len(log.history()) == 4 and log.history("demo")[0]["changed_from"] is None
+
+
+def test_log_rows_handle_no_data(tmp_path, now):
+    """A no-data entry flattens without temperature columns instead of crashing."""
+    from spraywait.pesticides.db import DEFAULT_PESTICIDE
+    from spraywait.weather.types import Reading
+    log = DecisionLog(tmp_path / "log.jsonl")
+    empty = Reading(now, [], source="farm")
+    log.append(empty, DEFAULT_PESTICIDE, decide(empty, now=now))
+    (row,) = log.rows()
+    assert row["status"] == "STOP" and not any(k.startswith("temp") for k in row)
+
+
+def test_log_reads_entries_without_mode(tmp_path):
+    """Entries written before the mode field existed are treated as live."""
+    import json
+    path = tmp_path / "log.jsonl"
+    old = {"logged_at": "2026-11-15T10:00:00", "pesticide": "A",
+           "reading": {"timestamp": "2026-11-15T10:00:00", "source": "s", "levels": []},
+           "decision": {"status": "GO", "reasons": [], "flags": []}}
+    path.write_text(json.dumps(old) + "\n")
+    assert DecisionLog(path).history("live")[0]["mode"] == "live"

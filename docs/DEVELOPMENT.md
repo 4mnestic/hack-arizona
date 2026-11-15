@@ -76,12 +76,15 @@ FARM_API_KEY=devkey .venv/bin/uvicorn api.main:app --host 0.0.0.0 --port 8000 --
 ```
 
 - `/` is live mode. The farmer picks a **pesticide** and **nozzle** only; weather comes from the farm station. `FARM_WEATHER=dummy` (default) reads the simulated station; `FARM_WEATHER=push` uses the latest payload the real station posted (none yet gives STOP).
+- `/log` shows the time-stamped log (Live/Demo tabs, status-changes filter, CSV download). Every new reading checked is logged once per pesticide/nozzle (refreshes don't duplicate). Stored as JSONL at `SPRAY_LOG_PATH` (default `spray_log.jsonl`); on Render's free plan it resets when the server sleeps.
 - `/demo` is demo mode. It adds a conditions picker: simulated scenarios, or public forecast data (Open-Meteo) at the phone's location.
 
 | Route | Purpose |
 |---|---|
 | `GET /api/pesticides`, `/api/nozzles`, `/api/scenarios` | Picker options |
 | `POST /api/decision` | `{pesticide, nozzle, source: farm\|station\|simulated\|public, scenario, lat, lon}` returns decision, ground-only comparison, reading, resolved spray profile |
+| `GET /api/log?mode=live\|demo&changes_only=&limit=` | Log entries, newest first; `changed_from` marks status changes (alerts) |
+| `GET /api/log.csv?mode=` | Log as CSV |
 | `POST /api/readings` | Farm station pushes its payload (format below) with header `X-Farm-Key: $FARM_API_KEY` |
 
 - `spraywait/nozzles/`: nozzle catalog (`nozzles.json`); ASABE droplet class maps to the engine's fine/medium/coarse.

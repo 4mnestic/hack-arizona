@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Spray Log</title>
+  <meta name="description" content="Time-stamped record of weather readings, spray decisions, and what triggered each alert.">
+  <meta name="theme-color" content="#14181c">
+  <link rel="manifest" href="/manifest.json">
+  <link rel="icon" href="/icons/icon-192.png">
+  <link rel="apple-touch-icon" href="/icons/icon-192.png">
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <main>
+    <header>
+      <h1>Spray log</h1>
+      <a id="back" class="small" href="/">Back</a>
+    </header>
+
+    <nav class="tabs" aria-label="Log">
+      <a id="tab-live" href="/log">Live</a>
+      <a id="tab-demo" href="/log?mode=demo">Demo</a>
+    </nav>
+
+    <div class="log-tools">
+      <label class="check"><input type="checkbox" id="changes-only"> Status changes only</label>
+      <a id="csv" class="button" href="/api/log.csv" download>Download CSV</a>
+    </div>
+
+    <p id="empty" class="muted center" hidden>No entries yet. Open the app to start recording.</p>
+    <ol id="entries" class="entries"></ol>
+
+    <footer class="muted small">Entries are recorded each time new weather is checked. Advisory only. The pesticide label is the law.</footer>
+  </main>
+  <script src="/log.js"></script>
+</body>
+</html>

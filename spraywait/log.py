@@ -16,11 +16,13 @@ class DecisionLog:
         self.path = Path(path)
 
     def append(self, reading: Reading, pesticide: Pesticide, decision: Decision,
-               logged_at: datetime | None = None) -> dict:
+               logged_at: datetime | None = None, mode: str = "live") -> dict:
         entry = {
             "logged_at": (logged_at or datetime.now()).isoformat(timespec="seconds"),
+            "mode": mode,
             "reading": reading.to_dict(),
             "pesticide": pesticide.name,
+            "nozzle": pesticide.nozzle,
             "decision": decision.to_dict(),
         }
         with self.path.open("a") as f:
@@ -32,23 +34,50 @@ class DecisionLog:
             return []
         return [json.loads(line) for line in self.path.read_text().splitlines() if line.strip()]
 
-    def rows(self) -> list[dict]:
-        """Flattened, one row per entry, for tables."""
-        rows = []
+    def history(self, mode: str | None = None) -> list[dict]:
+        """Entries for one mode (or all), oldest first. Each gets `changed_from`: the previous
+        status for the same pesticide and nozzle when it differs (an alert), else None."""
+        last: dict[tuple, str] = {}
+        out = []
         for e in self.entries():
+            e.setdefault("mode", "live")
+            if mode and e["mode"] != mode:
+                continue
+            key = (e["mode"], e["pesticide"], e.get("nozzle", ""))
+            status = e["decision"]["status"]
+            prev = last.get(key)
+            e["changed_from"] = prev if prev and prev != status else None
+            last[key] = status
+            out.append(e)
+        return out
+
+    def rows(self, mode: str | None = None) -> list[dict]:
+        """Flattened, one row per entry, for tables and CSV."""
+        rows = []
+        for e in self.history(mode):
             lv = e["reading"]["levels"]
-            lo, hi = lv[0], lv[-1]
-            rows.append({
+            row = {
                 "time": e["reading"]["timestamp"],
+                "mode": e["mode"],
                 "status": e["decision"]["status"],
+                "changed_from": e["changed_from"] or "",
                 "pesticide": e["pesticide"],
-                f"temp {lo['height_ft']:g}ft": lo["temp_f"],
-                f"temp {hi['height_ft']:g}ft": hi["temp_f"],
-                f"wind {lo['height_ft']:g}ft": lo["wind_mph"],
-                f"wind {hi['height_ft']:g}ft": hi["wind_mph"],
+                "nozzle": e.get("nozzle", ""),
+                "source": e["reading"]["source"],
+            }
+            if lv:
+                lo, hi = lv[0], lv[-1]
+                row |= {
+                    f"temp {lo['height_ft']:g}ft": lo["temp_f"],
+                    f"temp {hi['height_ft']:g}ft": hi["temp_f"],
+                    f"wind {lo['height_ft']:g}ft": lo["wind_mph"],
+                    f"wind {hi['height_ft']:g}ft": hi["wind_mph"],
+                }
+            row |= {
                 "triggered": "; ".join(f"{f['severity']}: {f['check']}" for f in e["decision"]["flags"]) or "none",
                 "reasons": " | ".join(e["decision"]["reasons"]),
-            })
+            }
+            rows.append(row)
         return rows
 
     def clear(self) -> None:

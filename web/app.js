@@ -110,6 +110,7 @@ async function init() {
     $("scenario-field").hidden = false;
     $("scenario-desc").hidden = false;
     $("mode-link").href = "/";
+    $("log-link").href = "/log?mode=demo";
     $("mode-link").textContent = "Live";
   }
   const [pesticides, nozzles, scen] = await Promise.all([
