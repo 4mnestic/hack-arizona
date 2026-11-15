@@ -9,4 +9,4 @@ Hackathon project (hack-arizona). Python.
 
 
 #test push
-# test Joy
+# test Joy- `README.md` is presentation-facing (for judges); the development plan lives in `docs/PLAN.md`.
