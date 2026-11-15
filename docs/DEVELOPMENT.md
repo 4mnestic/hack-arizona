@@ -1,6 +1,6 @@
 # Development notes
 
-Setup, usage, and layout for the `spraywait` package. (Project overview is in README.md, team plan in docs/PLAN.md, a file-level diagram in docs/FLOW.md.)
+Setup, usage, and layout for the `spraywait` package. (Project overview is in README.md, team plan in docs/PLAN.md, a file-level diagram in docs/FLOW.md, every rule and cutoff in docs/LOGIC.md.)
 
 ## Setup
 
@@ -33,18 +33,18 @@ Scenarios (each isolates one thing; `illustrates` holds the demo note and `expec
 We get the weather at two or more heights, for example 5 ft and 30 ft. Each height has a temperature, a wind speed, and a wind direction. All of that together, with a timestamp, is one "reading". Right now readings come from built-in example scenarios. Later they can come from a web forecast or a real sensor without changing anything else.
 
 **2. Pesticide input** (`spraywait/pesticides/`)
-We look up the pesticide being sprayed and get its properties: how easily it evaporates, how fine its droplets are, and its label's wind and temperature limits. Right now this comes from a small built-in list. Later it can come from Joy's CSV or an online database.
+We look up the pesticide being sprayed and get its properties: how easily it evaporates and its label's wind and temperature limits. Droplet size comes from the nozzle the farmer picks. If no nozzle is picked, we assume the finest droplets, because those drift the most. Right now this comes from a small built-in list. Later it can come from Joy's CSV or an online database.
 
 **3. Checks** (`spraywait/checks/`)
 The reading and the pesticide go through five separate checks. Each check looks at one thing and raises a warning if something is wrong. A warning is either CAUTION or STOP and comes with a sentence explaining why.
 - Data quality: is there any data, is it recent, do we have more than one height?
-- Inversion: is the air warmer up high than at the ground? If so, spray gets trapped near the ground.
+- Inversion: is the air warmer up high than at the ground? If so, spray gets trapped near the ground, and the answer is STOP. The warning says how strong the inversion is (weak under 1F, moderate, strong at 3F or more, the strongest class in NDSU Extension AE1876) and whether it is late afternoon through early morning (2 pm to 9 am) and the ground wind is light (under 7 mph), since those make it more likely to stick around (UC ANR). If the temperatures are nearly equal and the ground wind is light, the answer is CAUTION because an inversion may be forming. If the temperatures are nearly equal but the wind is 7 mph or more, the air is mixed and there is no warning. In that same late-afternoon-to-morning window with light wind, a smaller-than-normal temperature drop also gives CAUTION. docs/LOGIC.md lists which of these numbers have a source and which are assumptions. The time of day can only add caution, never remove it, because the server's clock may not match the farm's.
 - Wind speed: is the wind too calm or too strong at any height?
 - Wind shear: is the wind much stronger, or blowing a different direction, above the trees than at the ground?
 - Volatility: is it too hot for this pesticide, or is it windy enough to carry fine droplets?
 
 **4. Decision** (`spraywait/decision.py`)
-All the warnings are collected. If any says STOP, the answer is STOP. If any says CAUTION, the answer is CAUTION. If there are none, the answer is GO. Every warning's sentence is included so the applicator sees every reason.
+All the warnings are collected. If any says STOP, the answer is STOP. If any says CAUTION, the answer is CAUTION. If there are none, the answer is GO. Every warning's sentence is included so the applicator sees every reason. The decision also gets a risk score from 0 to 100: 0 for GO, 20 to 69 for CAUTION, 70 to 100 for STOP. It comes from the worst warning, with a few extra points for each additional warning, and it says how bad things are without ever changing the status (details in docs/LOGIC.md).
 There is also a "ground station only" version that uses just the lowest height. It shows what a normal weather station would say, so we can show the difference in the demo.
 
 **5. Record** (`spraywait/log.py`)
@@ -91,7 +91,7 @@ FARM_API_KEY=devkey .venv/bin/uvicorn api.main:app --host 0.0.0.0 --port 8000 --
 | `POST /api/readings` | Farm station pushes its payload (format below) with header `X-Farm-Key: $FARM_API_KEY` |
 
 - `spraywait/nozzles/`: nozzle catalog (`nozzles.json`); ASABE droplet class maps to the engine's fine/medium/coarse.
-- `spraywait/spray_setup.py`: `SpraySetup().resolve(pesticide, nozzle)` returns the `Pesticide` the checks take, with droplet size, VMD, and pressure from the nozzle.
+- `spraywait/spray_setup.py`: `SpraySetup().resolve(pesticide, nozzle)` returns the `Pesticide` the checks take, with droplet size, VMD, and pressure from the nozzle. With no nozzle, droplet size defaults to fine and the pesticide's own `droplet_size` is ignored.
 - `spraywait/weather/station.py`: the farm-station payload format (vendor-style: UTC time, metric units, one record per sensor with height), `parse_station_payload()` to turn it into a `Reading`, and `DummyStation`, a simulated 1.5 m / 9.1 m mast whose weather follows the local clock (inversion after dusk, mixing by day). Wiring a real station means replacing the payload supplier, not the checks. The parser pairs a wind-only height with the nearest temperature-only height within 4 ft (masts often mount anemometers just above the thermometer).
 - `spraywait/weather/mesonet.py`: `MesonetStation` replays a Mesonet 5-minute day file (TIME in UTC) as a live station. At UTC clock time HH:MM it reports that row in the payload format above. Temperature is at 1.5 m and 9 m, wind speed at 2 m and 10 m, wind direction at 10 m only. Missing-data codes (-99x) become null. `MesonetFeed` runs it inside the app (`FARM_WEATHER=mesonet`): with no timer, each time the app needs weather it stores every reading that has come due since the last sync (backfilling `MESONET_BACKFILL_HOURS`, default 6, on first use). That also fills the gap after Render's free plan wakes from sleep. `MESONET_SHIFT_HOURS` (or `--shift-hours` on the tool) replays the row that many hours ahead of the clock while stamping the real time. The shift is rounded to 5 minutes. Render uses 0.75, which puts the recorded evening inversion (00:00 to 03:05 UTC in the file) on about 4:15–7:30 pm Arizona, with no data gap from 4:10 pm on.
 - `spraywait/weather/farm.py`: in-memory store of the latest pushed reading plus 24 h of history for `/station` (resets when the server restarts).

@@ -17,10 +17,12 @@ def _speed_flags(lv: Level, lo: float, hi: float) -> list[Flag]:
     if lv.wind_mph < lo:
         return [Flag(Severity.STOP, "wind_speed",
                      f"Wind too calm ({at}, label minimum {lo:g} mph). "
-                     "Calm air often means an inversion; droplets hang and drift unpredictably.")]
+                     "Calm air often means an inversion; droplets hang and drift unpredictably.",
+                     70 + 5 * (lo - lv.wind_mph))]
     if lv.wind_mph > hi:
         return [Flag(Severity.STOP, "wind_speed",
-                     f"Wind too strong ({at}, label maximum {hi:g} mph). Droplets will be carried off target.")]
+                     f"Wind too strong ({at}, label maximum {hi:g} mph). Droplets will be carried off target.",
+                     70 + 5 * (lv.wind_mph - hi))]
     if lv.wind_mph < lo + EDGE_MARGIN_MPH:
         return [Flag(Severity.CAUTION, "wind_speed", f"Wind near the calm limit ({at}, minimum {lo:g} mph).")]
     if lv.wind_mph > hi - EDGE_MARGIN_MPH:
@@ -50,10 +52,13 @@ def check_wind_shear(reading: Reading, pesticide: Pesticide, now: datetime | Non
     if speed_diff >= SHEAR_SPEED_STOP_MPH:
         flags.append(Flag(Severity.STOP, "wind_shear",
                           f"Wind aloft is {speed_diff:.1f} mph stronger than at the ground {desc}. "
-                          "Ground conditions do not reflect the air the spray will rise into."))
+                          "Ground conditions do not reflect the air the spray will rise into.",
+                          70 + 5 * (speed_diff - SHEAR_SPEED_STOP_MPH)))
     elif speed_diff >= SHEAR_SPEED_CAUTION_MPH:
+        span = SHEAR_SPEED_STOP_MPH - SHEAR_SPEED_CAUTION_MPH
         flags.append(Flag(Severity.CAUTION, "wind_shear",
-                          f"Wind aloft is {speed_diff:.1f} mph stronger than at the ground {desc}."))
+                          f"Wind aloft is {speed_diff:.1f} mph stronger than at the ground {desc}.",
+                          30 + 30 * (speed_diff - SHEAR_SPEED_CAUTION_MPH) / span))
 
     both_dirs = lo.wind_dir_deg is not None and hi.wind_dir_deg is not None
     both_moving = min(lo.wind_mph, hi.wind_mph) >= MIN_SPEED_FOR_DIRECTION_MPH
@@ -63,8 +68,11 @@ def check_wind_shear(reading: Reading, pesticide: Pesticide, now: datetime | Non
         if dir_diff >= SHEAR_DIR_STOP_DEG:
             flags.append(Flag(Severity.STOP, "wind_shear",
                               f"Wind direction differs by {dir_diff:.0f} deg between heights {ddesc}. "
-                              "Spray can be carried in a direction the ground wind does not show."))
+                              "Spray can be carried in a direction the ground wind does not show.",
+                              70 + 0.5 * (dir_diff - SHEAR_DIR_STOP_DEG)))
         elif dir_diff >= SHEAR_DIR_CAUTION_DEG:
+            span = SHEAR_DIR_STOP_DEG - SHEAR_DIR_CAUTION_DEG
             flags.append(Flag(Severity.CAUTION, "wind_shear",
-                              f"Wind direction differs by {dir_diff:.0f} deg between heights {ddesc}."))
+                              f"Wind direction differs by {dir_diff:.0f} deg between heights {ddesc}.",
+                              30 + 30 * (dir_diff - SHEAR_DIR_CAUTION_DEG) / span))
     return flags

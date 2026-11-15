@@ -34,7 +34,8 @@ CHECKS
   spraywait/checks/__init__.py  ->  run_all_checks(reading, pesticide)
              │
              ├─ checks/data_quality.py   no data -> STOP; one height or stale -> CAUTION
-             ├─ checks/inversion.py      upper temp > lower temp -> STOP; near-equal -> CAUTION
+             ├─ checks/inversion.py      upper temp > lower temp -> STOP (graded weak/moderate/strong);
+             │                           near-equal + light wind -> CAUTION; weak lapse + evening + light wind -> CAUTION
              ├─ checks/wind.py           check_wind_speed: < min or > max -> STOP; near edge -> CAUTION
              │                           check_wind_shear: speed/direction differs by height -> CAUTION/STOP
              └─ checks/volatility.py     label max temp -> STOP; volatile + hot -> CAUTION/STOP;
