@@ -1,4 +1,4 @@
-# Spray or Wait
+# SprayWait: A Pesticide Drift Tool
 
 Go, Caution, or Stop for orchard pesticide spraying, with the reasons why.
 
