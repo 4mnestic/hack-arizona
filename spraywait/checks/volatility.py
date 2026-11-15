@@ -37,5 +37,5 @@ def check_volatility(reading: Reading, pesticide: Pesticide, now: datetime | Non
         windiest = max(lv.wind_mph for lv in reading.levels)
         if windiest >= FINE_DROPLET_WIND_CAUTION_MPH:
             flags.append(Flag(Severity.CAUTION, "droplet_size",
-                              f"{name} is applied as fine droplets; at {windiest:.0f} mph they drift more easily."))
+                              f"{name} is applied as fine droplets{' through ' + pesticide.nozzle if pesticide.nozzle else ''}; at {windiest:.0f} mph they drift more easily."))
     return flags

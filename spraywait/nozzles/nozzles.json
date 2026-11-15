@@ -1,0 +1,53 @@
+{
+  "_note": "Illustrative values for common orchard and orchard-floor nozzles at typical pressures. Droplet class follows the ASABE S572 categories; VMD is approximate. Check the manufacturer's chart for your exact tip and pressure.",
+  "nozzles": [
+    {
+      "name": "Disc-core hollow cone",
+      "kind": "airblast",
+      "asabe_class": "fine",
+      "vmd_microns": 160,
+      "pressure_psi": 150,
+      "notes": "Standard orchard airblast tip. Good coverage, high drift potential."
+    },
+    {
+      "name": "Ceramic hollow cone",
+      "kind": "airblast",
+      "asabe_class": "very fine",
+      "vmd_microns": 110,
+      "pressure_psi": 145,
+      "notes": "Very fine mist for dense canopies. Most drift-prone option."
+    },
+    {
+      "name": "Air-induction hollow cone",
+      "kind": "airblast",
+      "asabe_class": "coarse",
+      "vmd_microns": 380,
+      "pressure_psi": 100,
+      "notes": "Drift-reducing airblast tip. Larger, air-filled droplets."
+    },
+    {
+      "name": "Flat fan (standard)",
+      "kind": "boom",
+      "asabe_class": "medium",
+      "vmd_microns": 260,
+      "pressure_psi": 40,
+      "notes": "Orchard-floor herbicide boom."
+    },
+    {
+      "name": "Air-induction flat fan",
+      "kind": "boom",
+      "asabe_class": "very coarse",
+      "vmd_microns": 480,
+      "pressure_psi": 40,
+      "notes": "Drift-reducing herbicide tip."
+    },
+    {
+      "name": "Turbo twin air-induction flat fan",
+      "kind": "boom",
+      "asabe_class": "extremely coarse",
+      "vmd_microns": 650,
+      "pressure_psi": 40,
+      "notes": "Lowest drift for orchard-floor herbicides."
+    }
+  ]
+}

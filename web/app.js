@@ -1,0 +1,127 @@
+const $ = (id) => document.getElementById(id);
+const DEMO = location.pathname.startsWith("/demo");
+const store = {
+  get(k) { try { return localStorage.getItem(k); } catch { return null; } },
+  set(k, v) { try { localStorage.setItem(k, v); } catch {} },
+};
+const SUBTITLE = { GO: "Conditions look good to spray", CAUTION: "Spray with care", STOP: "Do not spray now" };
+const COMPASS = ["N", "NE", "E", "SE", "S", "SW", "W", "NW"];
+const PUBLIC = "__public__";
+const REFRESH_MS = 60_000;
+let scenarios = [];
+let coords = null;
+
+async function api(path, body) {
+  const res = await fetch(path, body ? {
+    method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body),
+  } : undefined);
+  if (!res.ok) throw new Error((await res.json().catch(() => ({}))).detail || res.statusText);
+  return res.json();
+}
+
+function fillSelect(sel, items, saved) {
+  sel.replaceChildren(...items.map(({ value, label }) => new Option(label, value)));
+  if (saved && items.some((i) => i.value === saved)) sel.value = saved;
+}
+
+const compass = (deg) => deg == null ? "–" : COMPASS[Math.round(deg / 45) % 8];
+const clock = (iso) => new Date(iso).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+
+function showError(word, msg) {
+  $("status").className = "status error";
+  $("status").querySelector(".status-word").textContent = word;
+  $("status").querySelector(".status-sub").textContent = msg;
+}
+
+function render(data) {
+  const d = data.decision;
+  $("status").className = `status ${d.status}`;
+  $("status").querySelector(".status-word").textContent = d.status;
+  $("status").querySelector(".status-sub").textContent = SUBTITLE[d.status];
+  $("source").textContent = `Weather: ${data.reading.source} · ${clock(data.reading.timestamp)}`;
+
+  const items = d.flags.length
+    ? d.flags.map((f) => ({ cls: f.severity, tag: f.check.replace(/_/g, " "), text: f.reason }))
+    : d.reasons.map((r) => ({ cls: "GO", tag: "all clear", text: r }));
+  $("reasons").replaceChildren(...items.map(({ cls, tag, text }) => {
+    const li = document.createElement("li");
+    li.className = cls;
+    const t = document.createElement("span");
+    t.className = "tag";
+    t.textContent = tag;
+    li.append(t, text);
+    return li;
+  }));
+
+  const g = data.ground_only?.status;
+  $("compare").hidden = !g || g === d.status;
+  $("compare").textContent = `A ground-level station alone would say ${g}. Measuring above the canopy changes the answer.`;
+
+  $("levels-section").hidden = !data.reading.levels.length;
+  $("levels").replaceChildren(...[...data.reading.levels].reverse().map((lv) => {
+    const tr = document.createElement("tr");
+    for (const v of [`${lv.height_ft} ft`, `${lv.temp_f.toFixed(1)}°F`, `${lv.wind_mph.toFixed(1)} mph`, compass(lv.wind_dir_deg)]) {
+      tr.insertCell().textContent = v;
+    }
+    return tr;
+  }));
+}
+
+function locate() {
+  if (coords) return Promise.resolve(coords);
+  return new Promise((resolve, reject) => {
+    if (!navigator.geolocation) return reject(new Error("location not available on this device"));
+    navigator.geolocation.getCurrentPosition(
+      (p) => resolve(coords = { lat: p.coords.latitude, lon: p.coords.longitude }),
+      () => reject(new Error("location permission denied")),
+      { timeout: 10_000, maximumAge: 600_000 },
+    );
+  });
+}
+
+async function weatherQuery() {
+  if (!DEMO) return { source: "farm" };
+  const scenario = $("scenario").value;
+  if (scenario === PUBLIC) return { source: "public", ...(await locate()) };
+  return { source: "simulated", scenario };
+}
+
+async function update() {
+  const pesticide = $("pesticide").value, nozzle = $("nozzle").value;
+  store.set("pesticide", pesticide);
+  store.set("nozzle", nozzle);
+  if (DEMO) {
+    store.set("scenario", $("scenario").value);
+    const s = scenarios.find((x) => x.id === $("scenario").value);
+    $("scenario-desc").textContent = s?.description || "";
+  }
+  try {
+    render(await api("/api/decision", { pesticide, nozzle, ...(await weatherQuery()) }));
+  } catch (e) {
+    showError("?", `Couldn't get a decision: ${e.message}`);
+  }
+}
+
+async function init() {
+  if (DEMO) {
+    $("mode-badge").hidden = false;
+    $("scenario-field").hidden = false;
+    $("scenario-desc").hidden = false;
+    $("mode-link").href = "/";
+    $("mode-link").textContent = "Live";
+  }
+  const [pesticides, nozzles, scen] = await Promise.all([
+    api("/api/pesticides"), api("/api/nozzles"), DEMO ? api("/api/scenarios") : [],
+  ]);
+  scenarios = [...scen, { id: PUBLIC, title: "Public forecast near me", description: "Current forecast-model weather at your location (2 m and 80 m)." }];
+  fillSelect($("pesticide"), pesticides.map((p) => ({ value: p.name, label: p.category ? `${p.name} (${p.category})` : p.name })), store.get("pesticide"));
+  fillSelect($("nozzle"), nozzles.map((n) => ({ value: n.name, label: `${n.name} (${n.asabe_class})` })), store.get("nozzle"));
+  if (DEMO) fillSelect($("scenario"), scenarios.map((s) => ({ value: s.id, label: s.title })), store.get("scenario"));
+  for (const id of ["pesticide", "nozzle", "scenario"]) $(id).addEventListener("change", update);
+  await update();
+  if (!DEMO) setInterval(update, REFRESH_MS);
+}
+
+init().catch((e) => showError("?", `Offline or server down: ${e.message}`));
+
+if ("serviceWorker" in navigator) navigator.serviceWorker.register("/sw.js").catch(() => {});

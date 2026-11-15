@@ -38,5 +38,32 @@ Scenarios: `evening_inversion` (demo), `clear_midday`, `too_windy`, `dead_calm`,
 ## Testing
 
 ```bash
-.venv/bin/pytest --cov=spraywait
+.venv/bin/pytest --cov=spraywait --cov=api --cov=tools
 ```
+
+## Web app
+
+`api/main.py` is a FastAPI app; `web/` is the PWA it serves (plain HTML/JS, no build step).
+
+```bash
+FARM_API_KEY=devkey .venv/bin/uvicorn api.main:app --host 0.0.0.0 --port 8000 --reload
+```
+
+- `/` is live mode. The farmer picks a **pesticide** and **nozzle** only; weather is the farm station's latest reading. No reading yet gives STOP.
+- `/demo` is demo mode. It adds a conditions picker: simulated scenarios, or public forecast data (Open-Meteo) at the phone's location.
+
+| Route | Purpose |
+|---|---|
+| `GET /api/pesticides`, `/api/nozzles`, `/api/scenarios` | Picker options |
+| `POST /api/decision` | `{pesticide, nozzle, source: farm\|simulated\|public, scenario, lat, lon}` returns decision, ground-only comparison, reading, resolved spray profile |
+| `POST /api/readings` | Farm station pushes `{timestamp, levels: [{height_ft, temp_f, wind_mph, wind_dir_deg}], source}` with header `X-Farm-Key: $FARM_API_KEY` |
+
+- `spraywait/nozzles/`: nozzle catalog (`nozzles.json`); ASABE droplet class maps to the engine's fine/medium/coarse.
+- `spraywait/spray_setup.py`: `SpraySetup().resolve(pesticide, nozzle)` returns the `Pesticide` the checks take, with droplet size, VMD, and pressure from the nozzle.
+- `spraywait/weather/farm.py`: in-memory store of the latest farm reading (resets when the server restarts).
+- `spraywait/weather/public.py`: Open-Meteo, 2 m temperature + 10 m wind near the ground, 80 m aloft. Demo only.
+- `tools/push_reading.py`: stand-in farm station; pushes one simulated reading.
+
+## Deploy (Render)
+
+`render.yaml` is a Render Blueprint (free plan, deploys the `dev` branch, generates `FARM_API_KEY`). In Render: **New > Blueprint**, connect the GitHub repo, apply. The free plan sleeps after ~15 idle minutes, so the first request can take up to a minute.

@@ -30,10 +30,18 @@ Status model → GO / CAUTION / STOP + reasons
 4. **Other checks:** rain forecast, temperature, humidity, volatility, and label limits.
 5. **Status model:** combines all model results into one decision with reasons.
 
+## App
+
+- **Live** (`/`): the farmer chooses only the pesticide and nozzle. Weather comes automatically from the farm's own station, pushed to the API.
+- **Demo** (`/demo`): adds simulated scenarios and public forecast data, for presentations.
+- **Nozzle module:** converts nozzle to droplet size and pressure, merged with the pesticide's label values.
+- FastAPI backend plus an installable PWA, deployed on Render.
+
 ## Inputs
 
 - **Weather:** temperature and wind at multiple heights (plan for 5ft and 30ft, as specified in the challenge prompt, liable to change).
-- **Pesticide:** droplet size, and vapor pressure.
+- **Pesticide:** vapor pressure, volatility, and label limits.
+- **Nozzle:** droplet size class, VMD, and pressure.
 - **Orchard:** location, canopy height, and nearby sensitive areas.
 
 ## Goals
