@@ -13,7 +13,7 @@ services:
         value: 3.12.8
       - key: FARM_WEATHER   # mesonet = replay data/mesonet_data_files.csv in real time; dummy = synthetic; push = real station posts to /api/readings
         value: mesonet
-      - key: MESONET_SHIFT_HOURS   # replay 30 min ahead: 4:30-8 pm Arizona lands in the recorded evening inversion
-        value: "0.5"
+      - key: MESONET_SHIFT_HOURS   # replay 45 min ahead: data from 4:10 pm Arizona, recorded evening inversion until ~7:30 pm
+        value: "0.75"
       - key: FARM_API_KEY
         generateValue: true

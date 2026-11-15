@@ -51,6 +51,13 @@ def test_shift_replays_a_later_row_at_the_real_time(csv_path):
     assert {s["id"]: s["value"] for s in p["sensors"]}["TAIR"] == 10.0  # the 00:05 row
 
 
+def test_shift_rounds_to_five_minutes(csv_path):
+    """A shift that isn't a multiple of 5 min (e.g. 0.6 h = 36 min) rounds to the row grid instead of matching nothing."""
+    st = MesonetStation(csv_path, shift=timedelta(minutes=6))
+    assert st.shift == timedelta(minutes=5)
+    assert {s["id"]: s["value"] for s in st.payload(at(0, 0))["sensors"]}["TAIR"] == 10.0
+
+
 def test_missing_codes_and_absent_rows_report_null(station):
     """Mesonet -99x codes, and times past the end of the file, become null sensor values."""
     for t in (at(0, 10), at(23, 55)):

@@ -18,7 +18,7 @@ Pesticide spray can drift beyond the orchard onto neighboring crops, workers, ho
 
 ## Demo
 
-**Live** (`/`): the farm station replays a real day of Oklahoma Mesonet readings (temperature at 1.5 m and 9 m, wind at 2 m and 10 m) in real time. From about 4:30 to 8 pm Arizona time it is in a recorded evening inversion: the ground sensor alone says GO, SprayWait says STOP. The **Station** page (`/station`) charts both heights over the day; the **Log** (`/log`) shows each decision and what triggered it.
+**Live** (`/`): the farm station replays a real day of Oklahoma Mesonet readings (temperature at 1.5 m and 9 m, wind at 2 m and 10 m) in real time. From about 4:15 to 7:30 pm Arizona time it is in a recorded evening inversion: the ground sensor alone says GO, SprayWait says STOP. The **Station** page (`/station`) charts both heights over the day; the **Log** (`/log`) shows each decision and what triggered it.
 
 **Demo** (`/demo`): pick a scenario to see each check.
 
@@ -100,7 +100,7 @@ FARM_API_KEY=devkey .venv/bin/uvicorn api.main:app --host 0.0.0.0 --port 8000
 - Live app: http://localhost:8000. Pick a pesticide and nozzle; weather comes from the farm's station (simulated until a real one is connected). Below the decision, a 24-hour forecast strip shows the next GO window, or when conditions are expected to turn worse. The forecast uses Open-Meteo at the orchard location (`ORCHARD_LAT`/`ORCHARD_LON`; default: near Modesto, CA).
 - Demo app: http://localhost:8000/demo. Adds simulated scenarios and public forecast data.
 - Station page: http://localhost:8000/station. What the farm station is reporting: readings at each height, a 24-hour chart, and the spray status over time.
-- Farm station from real data: start the server with `FARM_WEATHER=mesonet` (the deployed default) to replay one day of Oklahoma Mesonet readings (`data/mesonet_data_files.csv`) in real time, one reading every 5 minutes, starting with the last 6 hours (`MESONET_BACKFILL_HOURS`). The deployed app sets `MESONET_SHIFT_HOURS=0.5`, so it replays the recorded day 30 minutes ahead of the clock. This is demo data: from about 4:30 to 8 pm Arizona time it replays the recorded evening inversion, when a ground station alone says GO and the 30 ft sensor makes it STOP. The file has no readings for the 2 hours before that (about 2:20 to 4:30 pm with the shift).
+- Farm station from real data: start the server with `FARM_WEATHER=mesonet` (the deployed default) to replay one day of Oklahoma Mesonet readings (`data/mesonet_data_files.csv`) in real time, one reading every 5 minutes, starting with the last 6 hours (`MESONET_BACKFILL_HOURS`). The deployed app sets `MESONET_SHIFT_HOURS=0.75`, so it replays the recorded day 45 minutes ahead of the clock. This is demo data: from about 4:15 to 7:30 pm Arizona time it replays the recorded evening inversion, when a ground station alone says GO and the 30 ft sensor makes it STOP. The file has no readings for the 2 hours before that (about 2:05 to 4:10 pm with the shift).
 - Or run that replay as a separate station posting over the network (server with `FARM_WEATHER=push`): `FARM_API_KEY=devkey .venv/bin/python -m tools.mesonet_station http://localhost:8000 --backfill-hours 6`
 - Push one simulated reading instead: `FARM_API_KEY=devkey .venv/bin/python -m tools.push_reading http://localhost:8000`
 - Tests: `.venv/bin/pytest --cov=spraywait --cov=api --cov=tools`
