@@ -28,8 +28,36 @@ Go, Caution, or Stop for orchard pesticide spraying, with the reasons why.
 
 <!-- TODO: final architecture diagram. Explain the inversion, wind, and status models in one line each. -->
 
-### Science
+## Science
 
+#### **Temperature Inversions (Primary Drift Risk)**
+Under normal atmospheric conditions, air temperature generally decreases as altitude increases.
+A temperature inversion occurs when warmer air sits above cooler air near the ground, preventing normal vertical air mixing.
+This creates a stable layer of air that can trap fine pesticide droplets and vapor close to the surface.
+Instead of dispersing upward, airborne pesticides can travel horizontally over long distances, potentially reaching neighboring crops, workers, and nearby communities.
+Inversions can be difficult to recognize because ground-level conditions may appear calm and suitable for spraying (Nowatzki, n.d.).
+### **Other Factors Affecting Spray Drift**
+Wind Speed: Very low wind speeds can allow droplets to remain suspended, while stronger winds can carry droplets beyond the target area.
+Wind Shear: Wind speed and direction can change with altitude. Winds above the orchard canopy may be stronger or travel in a different direction than winds near the ground.
+Droplet Size: Smaller droplets remain airborne longer and are more easily transported by wind. Nozzle type and spray pressure influence droplet size (Nuyttens et al., 2007).
+Temperature and Humidity: High temperatures and low humidity accelerate droplet evaporation, causing droplets to shrink and become more susceptible to drift.
+Pesticide Volatility: Some pesticides can vaporize after application, creating additional drift risks even after spraying has stopped (Al Heidary et al., 2014).
+## **How SprayWait Applies This Science**
+SprayWait uses multi-height weather measurements to identify atmospheric conditions that traditional ground-level weather stations may miss.
+
+Measures temperature and wind speed and direction at approximately 5 ft and 30 ft.
+Detects potential temperature inversions by comparing temperatures at both heights.
+Identifies concerning wind speeds and changes in wind direction or speed with altitude.
+Generates Go, Caution, or Stop alerts based on detected drift-risk conditions.
+Records weather readings and alerts with timestamps for applicator and PCA reference.
+The goal of SprayWait is to help applicators recognize dangerous atmospheric conditions before and during pesticide application, reducing unintended drift and protecting surrounding crops, workers, communities, and the environment.
+
+**SprayWait is a decision-support tool and does not replace pesticide label requirements, regulations, or professional judgment.**
+
+References
+Nowatzki, J. (n.d.). Understanding air temperature inversions relating to pesticide drift. North Dakota State University Extension. https://www.ndsu.edu/agriculture/extension/publications/understanding-air-temperature-inversions-relating-pesticide-drift
+Nuyttens, D., Baetens, K., De Schampheleire, M., & Sonck, B. (2007). Effect of nozzle type, size and pressure on spray droplet characteristics. Biosystems Engineering, 97(3), 333–345. https://doi.org/10.1016/j.biosystemseng.2007.03.001
+Al Heidary, M., Douzals, J. P., Sinfort, C., & Vallet, A. (2014). Influence of spray characteristics on potential spray drift of field crop sprayers: A literature review. Crop Protection, 63, 120–130. https://doi.org/10.1016/j.cropro.2014.05.006
 <!-- TODO: one cited source per threshold (inversion detection, wind limits, volatility). -->
 
 ## Run it
