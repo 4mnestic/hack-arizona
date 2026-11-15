@@ -13,5 +13,7 @@ services:
         value: 3.12.8
       - key: FARM_WEATHER   # mesonet = replay data/mesonet_data_files.csv in real time; dummy = synthetic; push = real station posts to /api/readings
         value: mesonet
+      - key: MESONET_SHIFT_HOURS   # replay 1 h ahead: a ~5 pm Arizona demo lands in the recorded evening inversion
+        value: "1"
       - key: FARM_API_KEY
         generateValue: true

@@ -202,7 +202,8 @@ async function load() {
     return;
   }
   points = data.history.map(toPoint);
-  $("station-meta").textContent = `${data.latest.source} · last report ${clock(data.latest.timestamp)} · ${points.length} reports`;
+  const shift = data.replay_shift_h ? ` · replaying recorded Oklahoma Mesonet data, shifted ${data.replay_shift_h} h` : "";
+  $("station-meta").textContent = `${data.latest.source} · last report ${clock(data.latest.timestamp)} · ${points.length} reports${shift}`;
   renderNow(data.latest, data.age_s);
   $("charts").hidden = false;
   const temp = lineChart($("chart-temp"), "temp_f", "Temperature", [

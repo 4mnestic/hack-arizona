@@ -2,7 +2,8 @@
 
 Live mode (/) uses the farm's station. FARM_WEATHER=dummy (default) reads the simulated
 station; FARM_WEATHER=push uses the latest payload the real station POSTed to /api/readings;
-FARM_WEATHER=mesonet replays the Mesonet CSV (MESONET_CSV) in real time inside the app.
+FARM_WEATHER=mesonet replays the Mesonet CSV (MESONET_CSV) in real time inside the app,
+MESONET_SHIFT_HOURS ahead of the clock.
 Demo mode (/demo) can also use simulated scenarios or public forecast data.
 """
 
@@ -50,7 +51,8 @@ def _sync_station() -> None:
         if not path.exists():
             return  # no data file: the farm store stays empty, so live mode fails safe to STOP
         backfill = timedelta(hours=float(os.environ.get("MESONET_BACKFILL_HOURS", 6)))
-        _feed = MesonetFeed(MesonetStation(path), farm, backfill)
+        shift = timedelta(hours=float(os.environ.get("MESONET_SHIFT_HOURS", 0)))
+        _feed = MesonetFeed(MesonetStation(path, shift), farm, backfill)
     _feed.sync()
 
 
@@ -120,6 +122,7 @@ def station() -> dict:
     latest = farm.latest
     return {
         "weather": os.environ.get("FARM_WEATHER", "dummy"),
+        "replay_shift_h": _feed.station.shift.total_seconds() / 3600 if _feed else None,
         "latest": point(latest) if latest else None,
         "age_s": int((datetime.now() - latest.timestamp).total_seconds()) if latest else None,
         "history": [point(r) for r in farm.history()],

@@ -44,6 +44,13 @@ def test_payload_uses_row_for_current_utc_slot(station):
     assert vals["TAIR"] == 10.0 and vals["TA9M"] == 9.0 and vals["WS2M"] == 3.0 and vals["WDIR"] == 99
 
 
+def test_shift_replays_a_later_row_at_the_real_time(csv_path):
+    """With a shift, the station sends the row `shift` ahead of the clock but stamps the real time."""
+    p = MesonetStation(csv_path, shift=timedelta(minutes=5)).payload(at(0, 0))
+    assert p["observed_at"] == "2026-11-15T00:00:00Z"
+    assert {s["id"]: s["value"] for s in p["sensors"]}["TAIR"] == 10.0  # the 00:05 row
+
+
 def test_missing_codes_and_absent_rows_report_null(station):
     """Mesonet -99x codes, and times past the end of the file, become null sensor values."""
     for t in (at(0, 10), at(23, 55)):
@@ -110,7 +117,8 @@ def client(monkeypatch, tmp_path):
 
 def test_station_endpoint_empty(client):
     """Before any report the station endpoint says so, with the weather mode."""
-    assert client.get("/api/station").json() == {"weather": "push", "latest": None, "age_s": None, "history": []}
+    assert client.get("/api/station").json() == {"weather": "push", "replay_shift_h": None, "latest": None,
+                                                 "age_s": None, "history": []}
 
 
 def test_station_endpoint_reports_history_with_status(client, station):
@@ -178,7 +186,7 @@ def test_main_backfills_then_sends_each_slot(monkeypatch, csv_path):
     monkeypatch.setattr(tool, "send", lambda url, key, p: sent.append(p["observed_at"]))
     monkeypatch.setattr(tool.time, "sleep", fake_sleep)
     with pytest.raises(Stop):
-        tool.main(["x", "http://x", "--csv", str(csv_path), "--backfill-hours", "0.25"])
+        tool.main(["x", "http://x", "--csv", str(csv_path), "--backfill-hours", "0.25", "--shift-hours", "1"])
     assert len(sent) in (4, 5)  # 15 min backfill (3-4 slots) + 1 live send
     assert all(0 < w <= 300 for w in waits)
 
@@ -208,11 +216,13 @@ def test_mesonet_mode_feeds_live_decision_and_station(mesonet_client, monkeypatc
     day.write_text(HEADER + "".join(ROWS[0].replace("00:00", f"{m // 60:02d}:{m % 60:02d}") + "\n"
                                     for m in range(0, 1440, 5)))
     monkeypatch.setenv("MESONET_CSV", str(day))
+    monkeypatch.setenv("MESONET_SHIFT_HOURS", "1")
     body = mesonet_client.post("/api/decision", json={}).json()
     assert body["reading"]["source"] == "farm station mesonet-acme"
     assert body["decision"]["status"] == "STOP"
     assert any(f["check"] == "inversion" for f in body["decision"]["flags"])
-    assert len(mesonet_client.get("/api/station").json()["history"]) > 1
+    station = mesonet_client.get("/api/station").json()
+    assert len(station["history"]) > 1 and station["replay_shift_h"] == 1
 
 
 def test_mesonet_mode_without_csv_fails_safe(mesonet_client, monkeypatch, tmp_path):

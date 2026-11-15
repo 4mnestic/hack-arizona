@@ -1,6 +1,6 @@
 """Run the Mesonet replay as a live farm station: post each 5-minute reading to the app, in real time.
 
-    FARM_API_KEY=... python -m tools.mesonet_station http://localhost:8000 [--csv PATH] [--backfill-hours N]
+    FARM_API_KEY=... python -m tools.mesonet_station http://localhost:8000 [--csv PATH] [--backfill-hours N] [--shift-hours H]
 
 The server must run with FARM_WEATHER=push (and the same FARM_API_KEY) for live mode to use it.
 --backfill-hours first uploads the last N hours, like a datalogger sending its buffer after reconnecting.
@@ -40,13 +40,14 @@ def main(argv: list[str]) -> int:
     ap.add_argument("url")
     ap.add_argument("--csv", default=DEFAULT_CSV)
     ap.add_argument("--backfill-hours", type=float, default=0)
+    ap.add_argument("--shift-hours", type=float, default=0, help="replay the recorded day this far ahead of the clock")
     args = ap.parse_args(argv[1:])
     key = os.environ.get("FARM_API_KEY")
     if not key:
         print("set FARM_API_KEY (must match the server's)")
         return 2
 
-    station = MesonetStation(args.csv)
+    station = MesonetStation(args.csv, timedelta(hours=args.shift_hours))
     now = datetime.now(timezone.utc)
     start = now - timedelta(hours=args.backfill_hours)
     for payload in station.payloads_since(start, now):

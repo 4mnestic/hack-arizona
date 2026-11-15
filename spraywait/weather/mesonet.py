@@ -4,8 +4,9 @@ Mesonet MTS files (one row per 5 minutes, TIME in UTC) carry the two heights the
 air temperature at 1.5 m (TAIR) and 9 m (TA9M), wind speed at 2 m (WS2M) and 10 m (WSPD),
 wind direction at 10 m only (WDIR). Values <= -990 are Mesonet's missing-data codes.
 
-At wall-clock UTC time HH:MM the station reports the row for HH:MM (rounded down to 5 min),
-stamped with today's date, in the same vendor payload format as a real station.
+At wall-clock UTC time HH:MM the station reports the row for HH:MM + `shift` (rounded down to
+5 min), stamped with the real current time, in the same vendor payload format as a real station.
+The shift lets a demo at a given time of day replay a chosen part of the recorded day.
 """
 
 import csv
@@ -42,13 +43,14 @@ def _value(raw: str) -> float | None:
 class MesonetStation:
     """Replays a Mesonet day file as a live station, one row per 5 minutes of UTC clock time."""
 
-    def __init__(self, path: Path | str = DEFAULT_CSV):
+    def __init__(self, path: Path | str = DEFAULT_CSV, shift: timedelta = timedelta(0)):
         with open(path, newline="") as f:
             rows = list(csv.DictReader(f))
         if not rows:
             raise ValueError(f"{path}: no rows")
         self.station_id = f"mesonet-{rows[0]['STID'].strip().lower()}"
         self.rows = {r["TIME"].strip(): r for r in rows}
+        self.shift = shift
 
     @staticmethod
     def slot(now: datetime) -> datetime:
@@ -59,7 +61,7 @@ class MesonetStation:
     def payload(self, now: datetime | None = None) -> dict:
         """The vendor-style payload for the slot containing `now` (missing sensors report null)."""
         observed = self.slot(now or datetime.now(timezone.utc))
-        row = self.rows.get(f"{observed:%H:%M}", {})
+        row = self.rows.get(f"{observed + self.shift:%H:%M}", {})
         sensors = [{"id": col, "type": kind, "height_m": h, "value": _value(row.get(col)), "unit": unit}
                    for col, kind, h, unit in SENSORS]
         return {
