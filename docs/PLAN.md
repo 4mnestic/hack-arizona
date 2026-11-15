@@ -48,8 +48,11 @@ Status model → GO / CAUTION / STOP + reasons
 
 **Core:** inputs, inversion, wind, and status models, with unit tests. Plan for how to implement a mobile interface all the while. When the models are MVP-ready, we'll build the mobile app (android and iOS compatible).
 
+**Next (must-have, judged):** time-stamped log in the app. Record every decision (readings, status, what triggered each alert) with `spraywait/log.py`, and show it in a log view. The demo must show the log.
+
+**Then (helps the tiebreaker):** next safe spray window timeline. Run the checks hour by hour over the coming day and show a GO/CAUTION/STOP strip with "next GO window: 9am–1pm". Use the dummy station's day cycle first, then NWS hourly forecasts.
+
 **Stretch:**
-- Forecast of the next safe spray window
 - ML-based models
 
 ## Testing

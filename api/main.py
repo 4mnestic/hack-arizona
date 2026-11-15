@@ -1,13 +1,13 @@
 """FastAPI backend: wraps the spraywait engine in a JSON API and serves the PWA.
 
-Live mode (/) uses the farm's own station data, pushed to POST /api/readings.
+Live mode (/) uses the farm's station. FARM_WEATHER=dummy (default) reads the simulated
+station; FARM_WEATHER=push uses the latest payload the real station POSTed to /api/readings.
 Demo mode (/demo) can also use simulated scenarios or public forecast data.
 """
 
 import os
 import secrets
 from dataclasses import asdict
-from datetime import datetime
 from pathlib import Path
 from typing import Literal
 
@@ -19,8 +19,8 @@ from pydantic import BaseModel
 from spraywait import decide, single_station_decision
 from spraywait.pesticides import DEFAULT_PESTICIDE
 from spraywait.spray_setup import SpraySetup
-from spraywait.weather import (SCENARIOS, FarmSource, FarmStationStore, Level, PublicSource, Reading,
-                               SimulatedSource, WeatherSource)
+from spraywait.weather import (SCENARIOS, FarmSource, FarmStationStore, PublicSource, SimulatedSource,
+                               StationSource, WeatherSource, parse_station_payload)
 
 WEB_DIR = Path(__file__).resolve().parent.parent / "web"
 DEFAULT_SCENARIO = "evening_inversion"
@@ -30,23 +30,10 @@ setup = SpraySetup()
 farm = FarmStationStore()
 
 
-class LevelIn(BaseModel):
-    height_ft: float
-    temp_f: float
-    wind_mph: float
-    wind_dir_deg: float | None = None
-
-
-class ReadingIn(BaseModel):
-    timestamp: datetime | None = None
-    levels: list[LevelIn]
-    source: str = "farm"
-
-
 class DecisionRequest(BaseModel):
     pesticide: str | None = None
     nozzle: str | None = None
-    source: Literal["farm", "simulated", "public"] = "farm"
+    source: Literal["farm", "station", "simulated", "public"] = "farm"
     scenario: str | None = None
     lat: float | None = None
     lon: float | None = None
@@ -74,27 +61,22 @@ def scenarios() -> list[dict]:
     return [{"id": k, "title": v["title"], "description": v["description"]} for k, v in SCENARIOS.items()]
 
 
-def _naive_local(ts: datetime) -> datetime:
-    """Engine timestamps are naive local time; convert timezone-aware input."""
-    return ts.astimezone().replace(tzinfo=None) if ts.tzinfo else ts
-
-
 @app.post("/api/readings", status_code=201)
-def push_reading(reading: ReadingIn, x_farm_key: str | None = Header(default=None)) -> dict:
-    """Farm weather station pushes its latest multi-height reading here."""
+def push_reading(payload: dict, x_farm_key: str | None = Header(default=None)) -> dict:
+    """The farm's station pushes its payload here (format: spraywait/weather/station.py)."""
     expected = os.environ.get("FARM_API_KEY")
     if not expected:
         raise HTTPException(503, "farm ingest is not configured (set FARM_API_KEY)")
     if not x_farm_key or not secrets.compare_digest(x_farm_key, expected):
         raise HTTPException(401, "bad or missing X-Farm-Key")
+    try:
+        reading = parse_station_payload(payload)
+    except ValueError as e:
+        raise HTTPException(422, str(e)) from None
     if not reading.levels:
-        raise HTTPException(422, "reading needs at least one level")
-    farm.push(Reading(
-        timestamp=_naive_local(reading.timestamp) if reading.timestamp else datetime.now(),
-        levels=[Level(**lv.model_dump()) for lv in reading.levels],
-        source=reading.source,
-    ))
-    return {"stored": farm.latest.to_dict()}
+        raise HTTPException(422, "payload has no usable heights (need temp and wind)")
+    farm.push(reading)
+    return {"stored": reading.to_dict()}
 
 
 def _source(req: DecisionRequest) -> WeatherSource:
@@ -107,6 +89,8 @@ def _source(req: DecisionRequest) -> WeatherSource:
         if req.lat is None or req.lon is None:
             raise HTTPException(422, "public weather needs lat and lon")
         return PublicSource(req.lat, req.lon)
+    if req.source == "station" or os.environ.get("FARM_WEATHER", "dummy") == "dummy":
+        return StationSource()
     return FarmSource(farm)
 
 
@@ -126,7 +110,8 @@ def decision(req: DecisionRequest) -> dict:
     return {
         "decision": decide(reading, pesticide).to_dict(),
         "ground_only": ground.to_dict() if ground else None,
-        "reading": reading.to_dict(),
+        # Engine times are naive server-local; send an explicit offset so phones show their own time.
+        "reading": reading.to_dict() | {"timestamp": reading.timestamp.astimezone().isoformat()},
         "pesticide": asdict(pesticide),
     }
 

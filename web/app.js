@@ -7,6 +7,7 @@ const store = {
 const SUBTITLE = { GO: "Conditions look good to spray", CAUTION: "Spray with care", STOP: "Do not spray now" };
 const COMPASS = ["N", "NE", "E", "SE", "S", "SW", "W", "NW"];
 const PUBLIC = "__public__";
+const STATION = "__station__";
 const REFRESH_MS = 60_000;
 let scenarios = [];
 let coords = null;
@@ -83,6 +84,7 @@ async function weatherQuery() {
   if (!DEMO) return { source: "farm" };
   const scenario = $("scenario").value;
   if (scenario === PUBLIC) return { source: "public", ...(await locate()) };
+  if (scenario === STATION) return { source: "station" };
   return { source: "simulated", scenario };
 }
 
@@ -113,7 +115,9 @@ async function init() {
   const [pesticides, nozzles, scen] = await Promise.all([
     api("/api/pesticides"), api("/api/nozzles"), DEMO ? api("/api/scenarios") : [],
   ]);
-  scenarios = [...scen, { id: PUBLIC, title: "Public forecast near me", description: "Current forecast-model weather at your location (2 m and 80 m)." }];
+  scenarios = [
+    { id: STATION, title: "Farm station (simulated, live clock)", description: "A dummy 5 ft / 30 ft orchard mast whose weather follows the time of day: inversions at night, mixing by day." },
+    ...scen, { id: PUBLIC, title: "Public forecast near me", description: "Current forecast-model weather at your location (2 m and 80 m)." }];
   fillSelect($("pesticide"), pesticides.map((p) => ({ value: p.name, label: p.category ? `${p.name} (${p.category})` : p.name })), store.get("pesticide"));
   fillSelect($("nozzle"), nozzles.map((n) => ({ value: n.name, label: `${n.name} (${n.asabe_class})` })), store.get("nozzle"));
   if (DEMO) fillSelect($("scenario"), scenarios.map((s) => ({ value: s.id, label: s.title })), store.get("scenario"));

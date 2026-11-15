@@ -54,7 +54,7 @@ def test_public_source_parses_open_meteo(monkeypatch):
 
 
 def test_push_reading_posts_with_key(monkeypatch):
-    """The station script posts a simulated reading with the farm key header."""
+    """The station script posts a dummy-station payload with the farm key header."""
     sent = {}
 
     def fake_urlopen(req, timeout):
@@ -62,9 +62,9 @@ def test_push_reading_posts_with_key(monkeypatch):
         return FakeResponse(b'{"stored": {}}')
 
     monkeypatch.setattr(push_reading, "urlopen", fake_urlopen)
-    assert push_reading.push("http://x/", "too_windy", "k") == {"stored": {}}
+    assert push_reading.push("http://x/", "k") == {"stored": {}}
     assert sent["url"] == "http://x/api/readings" and sent["key"] == "k"
-    assert "too_windy" in sent["body"]["source"]
+    assert sent["body"]["station_id"] == "orchard-tower-1" and sent["body"]["sensors"]
 
 
 @pytest.mark.parametrize("argv,env,code", [(["p"], "k", 2), (["p", "http://x"], None, 2), (["p", "http://x"], "k", 0)])

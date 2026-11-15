@@ -7,19 +7,33 @@ import api.main as main
 from spraywait.weather import FarmStationStore, Level, Reading
 
 KEY = "test-key"
-CLEAR = [{"height_ft": 5, "temp_f": 70, "wind_mph": 5, "wind_dir_deg": 300},
-         {"height_ft": 30, "temp_f": 68.6, "wind_mph": 6, "wind_dir_deg": 305}]
+
+
+def sensors(lo_ms=2.4, hi_ms=2.7):
+    """Clear midday: ~70F/5mph at 1.5 m, ~68.6F/6mph at 9.1 m, metric like a real logger."""
+    out = []
+    for h, c, ms, d in [(1.5, 21.1, lo_ms, 300), (9.1, 20.3, hi_ms, 305)]:
+        out += [{"type": "air_temp", "height_m": h, "value": c, "unit": "C"},
+                {"type": "wind_speed", "height_m": h, "value": ms, "unit": "m/s"},
+                {"type": "wind_dir", "height_m": h, "value": d, "unit": "deg"}]
+    return out
+
+
+def payload(sensor_list=None, **extra):
+    return {"station_id": "north-block", "observed_at": datetime.now(timezone.utc).isoformat(),
+            "sensors": sensors() if sensor_list is None else sensor_list, **extra}
 
 
 @pytest.fixture
 def client(monkeypatch):
     monkeypatch.setenv("FARM_API_KEY", KEY)
+    monkeypatch.setenv("FARM_WEATHER", "push")
     monkeypatch.setattr(main, "farm", FarmStationStore())
     return TestClient(main.app)
 
 
-def push(client, levels=CLEAR, key=KEY, **extra):
-    return client.post("/api/readings", json={"levels": levels, **extra}, headers={"X-Farm-Key": key})
+def push(client, body=None, key=KEY):
+    return client.post("/api/readings", json=body or payload(), headers={"X-Farm-Key": key})
 
 
 def test_health(client):
@@ -47,35 +61,48 @@ def test_scenarios_have_ids_and_titles(client):
     assert all({"id", "title", "description"} <= s.keys() for s in items)
 
 
-def test_live_without_farm_data_is_stop(client):
-    """Live mode with no farm reading yet fails safe to STOP and skips the ground comparison."""
+def test_live_push_mode_without_farm_data_is_stop(client):
+    """Push-mode live with no farm reading yet fails safe to STOP and skips the ground comparison."""
     body = client.post("/api/decision", json={}).json()
     assert body["decision"]["status"] == "STOP"
     assert body["ground_only"] is None
     assert body["reading"]["levels"] == []
 
 
-def test_live_uses_pushed_farm_reading(client):
-    """After the farm pushes a clear reading, live mode says GO using it."""
-    assert push(client, source="north block tower").status_code == 201
+def test_live_uses_pushed_farm_payload(client):
+    """After the station pushes a clear payload, live mode says GO using it (UTC time not seen as stale)."""
+    assert push(client).status_code == 201
     body = client.post("/api/decision", json={"pesticide": "Captan", "nozzle": "Flat fan (standard)"}).json()
     assert body["decision"]["status"] == "GO"
-    assert body["reading"]["source"] == "north block tower"
+    assert body["reading"]["source"] == "farm station north-block"
     assert body["pesticide"]["nozzle"] == "Flat fan (standard)"
 
 
-def test_push_accepts_timezone_aware_timestamp(client):
-    """A UTC timestamp from the station is converted, so the reading is not seen as stale."""
-    push(client, timestamp=datetime.now(timezone.utc).isoformat())
-    flags = client.post("/api/decision", json={}).json()["decision"]["flags"]
-    assert "data" not in [f["check"] for f in flags]
+def test_live_dummy_mode_uses_simulated_station(client, monkeypatch):
+    """With FARM_WEATHER=dummy, live mode reads the dummy station without any push."""
+    monkeypatch.setenv("FARM_WEATHER", "dummy")
+    body = client.post("/api/decision", json={}).json()
+    assert body["reading"]["source"].startswith("farm station orchard-tower-1")
+    assert len(body["reading"]["levels"]) == 2
+
+
+def test_demo_station_source(client):
+    """source=station uses the dummy station even in push mode."""
+    body = client.post("/api/decision", json={"source": "station"}).json()
+    assert len(body["reading"]["levels"]) == 2
+
+
+def test_reading_timestamp_has_offset(client):
+    """Response timestamps carry a UTC offset so the phone shows correct local time."""
+    ts = client.post("/api/decision", json={"source": "station"}).json()["reading"]["timestamp"]
+    assert datetime.fromisoformat(ts).tzinfo is not None
 
 
 @pytest.mark.parametrize("key,status", [("wrong", 401), (None, 401)])
 def test_push_rejects_bad_key(client, key, status):
     """Pushing without the right farm key is rejected."""
     headers = {"X-Farm-Key": key} if key else {}
-    assert client.post("/api/readings", json={"levels": CLEAR}, headers=headers).status_code == status
+    assert client.post("/api/readings", json=payload(), headers=headers).status_code == status
 
 
 def test_push_disabled_without_configured_key(client, monkeypatch):
@@ -84,9 +111,10 @@ def test_push_disabled_without_configured_key(client, monkeypatch):
     assert push(client).status_code == 503
 
 
-def test_push_rejects_empty_levels(client):
-    """A reading with no levels is a 422."""
-    assert push(client, levels=[]).status_code == 422
+@pytest.mark.parametrize("body", [payload([]), {"sensors": []}, payload([{"type": "air_temp", "height_m": 1, "value": 1, "unit": "X"}])])
+def test_push_rejects_unusable_payload(client, body):
+    """Payloads with no usable heights, no timestamp, or unknown units are 422."""
+    assert push(client, body).status_code == 422
 
 
 def test_demo_inversion_scenario(client):
@@ -98,7 +126,7 @@ def test_demo_inversion_scenario(client):
 
 def test_nozzle_changes_decision(client):
     """A fine-droplet nozzle in a breeze adds a droplet-size caution that a coarse nozzle does not."""
-    push(client, levels=[{**CLEAR[0], "wind_mph": 7.5}, {**CLEAR[1], "wind_mph": 8}])
+    push(client, payload(sensors(lo_ms=3.4, hi_ms=3.6)))
     fine = client.post("/api/decision", json={"nozzle": "Disc-core hollow cone"}).json()["decision"]
     coarse = client.post("/api/decision", json={"nozzle": "Air-induction hollow cone"}).json()["decision"]
     assert "droplet_size" in [f["check"] for f in fine["flags"]]
