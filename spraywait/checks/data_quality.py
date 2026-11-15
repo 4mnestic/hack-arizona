@@ -10,7 +10,7 @@ STALE_AFTER = timedelta(minutes=15)
 def check_data_quality(reading: Reading, pesticide: Pesticide, now: datetime | None = None) -> list[Flag]:
     """Fail safe: missing or stale data can never produce GO."""
     if not reading.levels:
-        return [Flag(Severity.STOP, "data", "No weather data available.")]
+        return [Flag(Severity.STOP, "data", "No weather data available.", 100)]
     flags: list[Flag] = []
     if len({lv.height_ft for lv in reading.levels}) < 2:
         flags.append(Flag(Severity.CAUTION, "data",

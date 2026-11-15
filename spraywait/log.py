@@ -60,6 +60,7 @@ class DecisionLog:
                 "time": e["reading"]["timestamp"],
                 "mode": e["mode"],
                 "status": e["decision"]["status"],
+                "score": e["decision"].get("score", ""),
                 "changed_from": e["changed_from"] or "",
                 "pesticide": e["pesticide"],
                 "nozzle": e.get("nozzle", ""),

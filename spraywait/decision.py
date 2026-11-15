@@ -20,18 +20,32 @@ class Decision:
     flags: list[Flag] = field(default_factory=list)
     timestamp: datetime | None = None
     pesticide: str = ""
+    score: int = 0
 
     def to_dict(self) -> dict:
         return {
             "status": self.status.value,
+            "score": self.score,
             "reasons": self.reasons,
             "flags": [f.to_dict() for f in self.flags],
             "pesticide": self.pesticide,
         }
 
 
+EXTRA_FLAG_POINTS = 3
+CAUTION_MAX_SCORE = 69
+
+
+def _score(flags: list[Flag], status: Status) -> int:
+    """0 for GO; otherwise the worst flag's score plus a few points per extra flag, kept inside the status band."""
+    if status is Status.GO:
+        return 0
+    total = max(f.score for f in flags) + EXTRA_FLAG_POINTS * (len(flags) - 1)
+    return min(total, CAUTION_MAX_SCORE if status is Status.CAUTION else 100)
+
+
 def _combine(flags: list[Flag], reading: Reading, pesticide: Pesticide, ok_reason: str) -> Decision:
-    flags = sorted(flags, key=lambda f: -f.severity)
+    flags = sorted(flags, key=lambda f: (-f.severity, -f.score))
     if any(f.severity == Severity.STOP for f in flags):
         status = Status.STOP
     elif flags:
@@ -39,7 +53,7 @@ def _combine(flags: list[Flag], reading: Reading, pesticide: Pesticide, ok_reaso
     else:
         status = Status.GO
     reasons = [f.reason for f in flags] or [ok_reason]
-    return Decision(status, reasons, flags, reading.timestamp, pesticide.name)
+    return Decision(status, reasons, flags, reading.timestamp, pesticide.name, _score(flags, status))
 
 
 def decide(reading: Reading, pesticide: Pesticide = DEFAULT_PESTICIDE, now: datetime | None = None) -> Decision:

@@ -35,7 +35,7 @@ def test_near_neutral_with_moving_air_is_clear():
 def test_inversion_strength_is_named():
     weak = check_inversion(make_reading((60, 5, 180), (60.3, 6, 180)), DEFAULT_PESTICIDE)[0]
     moderate = check_inversion(make_reading((60, 5, 180), (61.2, 6, 180)), DEFAULT_PESTICIDE)[0]
-    strong = check_inversion(make_reading((60, 5, 180), (62.5, 6, 180)), DEFAULT_PESTICIDE)[0]
+    strong = check_inversion(make_reading((60, 5, 180), (63.5, 6, 180)), DEFAULT_PESTICIDE)[0]
     assert weak.reason.startswith("Weak") and moderate.reason.startswith("Moderate") and strong.reason.startswith("Strong")
     assert {weak.severity, moderate.severity, strong.severity} == {Severity.STOP}
 

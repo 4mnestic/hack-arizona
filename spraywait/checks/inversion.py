@@ -9,7 +9,7 @@ from spraywait.weather.types import Reading
 NEAR_NEUTRAL_F = 0.5
 FORMING_F = 1.0
 MODERATE_INVERSION_F = 1.0
-STRONG_INVERSION_F = 2.0
+STRONG_INVERSION_F = 3.0
 
 # Source: UC ANR, "Surface Inversions Cause Spray Drift". Radiation inversions form 3-4 h before
 # sunset and fade about an hour after sunrise, unless wind stays above 7 mph all night (the page
@@ -18,7 +18,11 @@ STRONG_INVERSION_F = 2.0
 LIGHT_WIND_MPH = 7.0
 PRONE_FROM_HOUR = 14
 PRONE_UNTIL_HOUR = 9
-# The temperature cutoffs above (0.5F, 1F, 2F) have no source yet; the page gives no numbers.
+# Source: NDSU Extension AE1876, Nowatzki, "Understanding Air Temperature Inversions Relating to
+# Pesticide Drift" (reviewed 2022). It says a bigger temperature difference means a more intense
+# inversion, and calls inversions of 3F or more the strongest (STRONG_INVERSION_F). Its Figure 2
+# counts inversions in bands of 0.5, 1, 2, 3F (3 m over 1 m), which is where 0.5F and 1F come from.
+# It gives no official weak/moderate cutoff, so 1F for "moderate" and FORMING_F are still our choice.
 
 
 def _is_prone_hour(ts: datetime) -> bool:
@@ -47,23 +51,24 @@ def check_inversion(reading: Reading, pesticide: Pesticide, now: datetime | None
 
     if delta > 0:
         if delta >= STRONG_INVERSION_F:
-            strength, effect = "Strong", "Spray will be trapped in a shallow layer and can drift long distances."
+            strength, score = "Strong", 95
+            effect = "Spray will be trapped in a shallow layer and can drift long distances."
         else:
-            strength = "Moderate" if delta >= MODERATE_INVERSION_F else "Weak"
+            strength, score = ("Moderate", 85) if delta >= MODERATE_INVERSION_F else ("Weak", 75)
             effect = "Air is not mixing upward, so fine droplets and vapor can travel sideways."
         return [Flag(Severity.STOP, "inversion",
                      f"{strength} temperature inversion: air aloft is {delta:.1f}F warmer than at the ground "
-                     f"{where}. {effect}{_context(prone, lo.wind_mph)}")]
+                     f"{where}. {effect}{_context(prone, lo.wind_mph)}", score)]
 
     if delta > -NEAR_NEUTRAL_F:
         if not light_wind:
             return []  # near-equal temperatures with moving air is a mixed layer, not an inversion
         return [Flag(Severity.CAUTION, "inversion",
                      f"Temperature nearly the same at both heights {where}. "
-                     f"Little vertical mixing; an inversion may be forming.{_context(prone, lo.wind_mph)}")]
+                     f"Little vertical mixing; an inversion may be forming.{_context(prone, lo.wind_mph)}", 45)]
 
     if delta > -FORMING_F and prone and light_wind:
         return [Flag(Severity.CAUTION, "inversion",
                      f"Air aloft is only {-delta:.1f}F cooler than at the ground {where}, a weaker drop than "
-                     f"normal.{_context(prone, lo.wind_mph)} Conditions favor an inversion forming.")]
+                     f"normal.{_context(prone, lo.wind_mph)} Conditions favor an inversion forming.", 35)]
     return []

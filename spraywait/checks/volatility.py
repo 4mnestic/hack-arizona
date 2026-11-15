@@ -19,7 +19,8 @@ def check_volatility(reading: Reading, pesticide: Pesticide, now: datetime | Non
 
     if pesticide.max_temp_f is not None and temp > pesticide.max_temp_f:
         flags.append(Flag(Severity.STOP, "label_temperature",
-                          f"{temp:.0f}F is above the {pesticide.max_temp_f:g}F label limit for {name}."))
+                          f"{temp:.0f}F is above the {pesticide.max_temp_f:g}F label limit for {name}.",
+                          70 + 2 * (temp - pesticide.max_temp_f)))
 
     if pesticide.volatility == "high":
         if temp >= HIGH_VOL_STOP_F:

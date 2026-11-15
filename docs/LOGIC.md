@@ -20,7 +20,38 @@ Advisory only. The pesticide label is the law.
 | No STOP, at least one CAUTION | CAUTION |
 | None | GO ("air is mixing, wind is within label limits at every height, and no shear detected") |
 
-There is no scoring or weighting. One STOP outweighs any number of other results.
+One STOP outweighs any number of other results. The score below only says how bad it is; it never changes the status.
+
+## Risk score (0 to 100)
+
+Every decision also gets a score. Higher means more drift risk. Each status has its own band, so the score can never disagree with the status:
+
+| Status | Score |
+|---|---|
+| GO | 0 |
+| CAUTION | 20 to 69 |
+| STOP | 70 to 100 |
+
+How it is worked out:
+
+1. Each warning gets its own score inside its band. By default CAUTION is 40 and STOP is 80, but most checks grade it by how bad the condition is.
+2. The decision's score is the worst warning's score, plus 3 points for each additional warning. It is then kept inside the status band (CAUTION stops at 69, STOP stops at 100).
+3. GO is always 0.
+
+| Warning | Score |
+|---|---|
+| Inversion STOP | weak 75, moderate 85, strong 95 |
+| Inversion CAUTION | nearly equal temperatures 45, may be forming 35 |
+| Wind too calm or too strong (STOP) | 70 plus 5 for every mph past the label limit |
+| Wind shear speed | CAUTION 30 to 60 as the difference grows from 5 to 8 mph; STOP 70 plus 5 for every mph past 8 |
+| Wind shear direction | CAUTION 30 to 60 as the difference grows from 45 to 90 degrees; STOP 70 plus 1 for every 2 degrees past 90 |
+| Over the label maximum temperature | 70 plus 2 for every degree past the limit |
+| Highly volatile product in heat, fine droplets, wind near the limits, stale or single-height data | the defaults (CAUTION 40, STOP 80) |
+| No weather data | 100 |
+
+**This is a ranking, not a probability.** The points are chosen so worse conditions score higher and status stays consistent. They are not calibrated against measured drift. The extra 3 points per warning can double count related warnings (for example an inversion and wind shear often appear together).
+
+The score appears in the decision output (`decision.score`), on each warning (`flags[].score`), in the log (a `score` column), and for the ground-station comparison (`ground_only.score`). The forecast hours from `windows.py` do not carry a score yet.
 
 ## Inputs the checks use
 
@@ -44,7 +75,7 @@ An inversion means the air is warmer higher up than at the ground. It traps spra
 
 | Situation | Result |
 |---|---|
-| Top is warmer than bottom | **STOP**, named weak (under 1F), moderate (1 to 2F) or strong (2F or more) |
+| Top is warmer than bottom | **STOP**, named weak (under 1F), moderate (1F to under 3F) or strong (3F or more) |
 | Top is not warmer, but is less than 0.5F cooler (nearly equal), **and ground wind is under 7 mph** | CAUTION: an inversion may be forming |
 | Same nearly-equal temperatures, **but ground wind is 7 mph or more** | No warning (moving air keeps the layer mixed) |
 | Top is cooler by 0.5F to 1F, **and** it is 2 pm to 9 am, **and** ground wind is under 7 mph | CAUTION: the temperature drop is weaker than normal, so conditions favor an inversion forming |
@@ -54,7 +85,7 @@ The reason text adds context when it is true: it is late afternoon through early
 
 Time of day can only add caution. It is never used to remove or soften a warning, because the server's clock may not match the farm's clock.
 
-**What is sourced and what is not** (source: UC ANR, "Surface Inversions Cause Spray Drift", see Sources below):
+**What is sourced and what is not** (sources: UC ANR, "Surface Inversions Cause Spray Drift", and NDSU Extension AE1876, see Sources below):
 
 | Rule | Status |
 |---|---|
@@ -62,7 +93,12 @@ Time of day can only add caution. It is never used to remove or soften a warning
 | Measure at the ground and several meters above | Supported. 5 ft and 30 ft (1.5 m and 9 m) fits. The page also says field temperatures often differ a lot from regional forecasts, which is why one ground or forecast reading is not enough. |
 | Light wind means an inversion can persist: 7 mph | Supported. The page says inversions are expected daily unless wind stays above 7 mph for the whole night between sunset and sunrise ("although even this isn't always true"). The page writes "7 m/h", read here as mph. A single reading cannot show a whole night, so this is a snapshot approximation. |
 | Window of 2 pm to 9 am | Supported in shape, approximated in numbers. The page says inversions begin 3 to 4 hours before sunset, peak just before sunrise, and fade within about an hour after sunrise. We have no sunrise or sunset times yet, so we use a fixed window wide enough to cover that rule all year. It only adds caution. |
-| 0.5F, 1F and 2F temperature cutoffs and the weak/moderate/strong names | **Assumption.** The page gives no temperature numbers. |
+| Strong inversion: 3F or more | Supported. NDSU says a bigger temperature difference means a more intense inversion and calls inversions of 3F or more the strongest. Its data was 3 m over 1 m, not our heights. |
+| Compare air near the ground with air about 10 ft up | Supported. NDSU's summary says measure at 1 ft above the soil or crop canopy and at 10 ft; any case where the ground is coolest is an inversion. |
+| Light wind: inversions resist mixing below 5 mph | Supported by NDSU, and weaker winds weaken inversions. We keep UC ANR's 7 mph, which is the more cautious of the two. |
+| Wind direction can flip up to 180 degrees inside an inversion | Supported by NDSU. Backs up the direction-shear check. |
+| 0.5F and 1F cutoffs | Partly supported. They are the band edges in NDSU's Figure 2 (counts of inversions by strength), not official limits. |
+| 1F weak/moderate split and the names weak/moderate/strong | **Assumption.** No source gives these labels. They only change the wording and score; every inversion is STOP either way. |
 
 ## 3. Wind speed (`checks/wind.py`)
 
@@ -132,7 +168,7 @@ Every cutoff is a constant at the top of its check file. Change it there and the
 
 ## Known limits
 
-- Sourced so far: the inversion wind and time rules above, and the 3 to 10 mph window (common guidance named in the challenge brief). Still assumptions: the inversion temperature cutoffs, all wind shear cutoffs (5 and 8 mph, 45 and 90 degrees), the volatility temperatures (75F, 85F), the 7 mph fine-droplet cutoff, the 1 mph edge margin and the 15-minute stale limit.
+- Sourced so far: the inversion wind and time rules above, the 3F strong-inversion cutoff (NDSU), and the 3 to 10 mph window (common guidance named in the challenge brief). Still assumptions: the 1F moderate cutoff, all wind shear cutoffs (5 and 8 mph, 45 and 90 degrees), the volatility temperatures (75F, 85F), the 7 mph fine-droplet cutoff, the 1 mph edge margin and the 15-minute stale limit.
 - The inversion window is fixed hours, not real sunrise and sunset. Once the orchard's location is an input, compute it (3 to 4 hours before sunset until about an hour after sunrise).
 - Cloud and rain are not inputs. The source says inversions are expected every day unless there is continuous heavy overcast or continuous rain, and that clear skies (cloud cover 25% or less) favor them.
 - Other signs the source lists are not used: evening and night wind much lighter than daytime wind, dew, frost, fog, sound carrying far, smoke hanging in the air.
@@ -145,4 +181,5 @@ Every cutoff is a constant at the top of its check file. Change it there and the
 ## Sources
 
 - UC ANR, "Surface Inversions Cause Spray Drift": https://ucanr.edu/blog/topics-subtropics/article/surface-inversions-cause-spray-drift
+- NDSU Extension, J. Nowatzki, "Understanding Air Temperature Inversions Relating to Pesticide Drift", AE1876 (reviewed Aug 2022): https://www.ndsu.edu/agriculture/extension/publications/understanding-air-temperature-inversions-relating-pesticide-drift (droplets of 200 microns or less fall only a few inches per second, which supports the fine-droplet default)
 - Challenge brief ("Spray or Wait?", Hack Arizona AgX): inversion defined as upper temperature higher than lower; 3 to 10 mph as common wind guidance; flag large wind differences between heights; actual limits depend on the pesticide label.
