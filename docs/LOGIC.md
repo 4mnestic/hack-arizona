@@ -106,6 +106,22 @@ Uses the temperature at the lowest height.
 
 Low volatility products are never flagged for heat alone, only for a label temperature limit.
 
+## Spray windows from the forecast (`spraywait/windows.py`)
+
+The same five checks are run on every hour of the forecast, using the chosen pesticide and nozzle. Each hour gets its own GO, CAUTION or STOP. Then two things are reported:
+
+- **Next GO window:** the first stretch of back-to-back GO hours. It starts at the first GO hour and ends one hour after the last GO hour in that run. If there are no GO hours, there is no window.
+- **Gets worse:** if the first forecast hour is GO or CAUTION, the first later hour with a worse status (GO to CAUTION or STOP, or CAUTION to STOP), with the names of the checks that caused it.
+
+Forecast hours are never treated as stale, because they are future predictions.
+
+The forecast comes from Open-Meteo (model data, not measurements): temperature at 2 m, wind at 10 m for the ground level, and temperature and wind at 80 m for the upper level.
+
+**Limits of forecast windows**
+
+- **Heights are far apart.** 2 m and 80 m are about 262 ft apart, not the 25 ft the cutoffs assume. The label wind limits (3 to 10 mph) are applied to the 80 m wind, which is usually stronger than the wind in the trees. Example: a normal afternoon with 6 mph at the ground and 11 mph at 80 m gives STOP ("wind too strong at 262 ft") and a shear CAUTION. Forecast windows will therefore be pessimistic and may show few or no GO hours. Fix options: apply the wind limits and shear cutoffs to the 10 m wind only, or use model values closer to canopy height.
+- **Timestamps use the server's clock.** Forecast times arrive in UTC and are converted to the server's local time. On Render the server runs in UTC, so the hour-of-day rule in the inversion check (2 pm to 9 am) would use UTC hours, not the orchard's. Because time of day only adds caution, the effect is extra or missing early-warning CAUTIONs, never a missed inversion STOP. The fix is to convert to the orchard's own timezone.
+
 ## The "single station" comparison (`single_station_decision`)
 
 For demos only. It shows what a basic ground-level station would say: it uses just the lowest height and runs only the wind speed and volatility checks. It has no inversion, shear or data-quality checks. The gap between this answer and the full answer is what the tool adds.
@@ -123,7 +139,7 @@ Every cutoff is a constant at the top of its check file. Change it there and the
 - Terrain is not an input. The source says inversions flow like water, drain downhill and collect in low spots, and that shade from trees or hills can start one earlier and keep it later.
 - The inversion temperature cutoffs assume sensors roughly 25 ft apart. Heights far apart, like the Open-Meteo source (about 7 ft and 262 ft), are not calibrated.
 - Gusts, humidity, orchard details (canopy height, sensitive neighbors) and wind direction relative to neighbors are not checked yet.
-- The pesticide values are illustrative, from memory and not looked up. The label governs.
+- The pesticide values are illustrative, from memory and not looked up. The label governs. Of the 47 pesticides, 44 are rated low volatility, 2 moderate (Malathion, Pendimethalin) and 1 high (2,4-D esters), so the volatility check only fires for those three, plus the 6 products with a label maximum temperature. Volatility is set by hand per product. The vapor pressure column is not used by any check, and 13 products have it blank. Every product uses the default 3 to 10 mph wind limits, so wind limits never differ between products. The droplet size column is ignored when the app resolves a spray setup, because the nozzle (or the fine-droplet default) decides droplet size.
 - The EPA drift page and the UC Extension weather-data PDF could not be used (one gave no usable numbers, one link is dead), so shear and volatility have no source yet.
 
 ## Sources
