@@ -88,7 +88,9 @@ def nozzles() -> list[dict]:
 
 @app.get("/api/scenarios")
 def scenarios() -> list[dict]:
-    return [{"id": k, "title": v["title"], "description": v["description"]} for k, v in SCENARIOS.items()]
+    """Demo scenarios with the presenter's note on what each one illustrates."""
+    return [{"id": k, "title": v["title"], "illustrates": v["illustrates"],
+             "expect": {"ground": v["expect"][0], "spraywait": v["expect"][1]}} for k, v in SCENARIOS.items()]
 
 
 @app.post("/api/readings", status_code=201)

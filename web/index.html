@@ -26,19 +26,23 @@
 
     <section class="controls">
       <label>Pesticide
-        <input id="pesticide" list="pesticide-list" autocomplete="off" spellcheck="false" placeholder="Type or pick a pesticide">
+        <input id="pesticide" class="search-input" type="search" list="pesticide-list" autocomplete="off"
+               spellcheck="false" enterkeyhint="done" placeholder="Type a pesticide name">
         <datalist id="pesticide-list"></datalist>
-        <span id="pesticide-err" class="field-err" hidden></span>
+        <span id="pesticide-hint" class="field-hint">Type part of the product name (for example "capt"), then tap it in the list.</span>
+        <span id="pesticide-err" class="field-err" role="alert" hidden></span>
       </label>
       <label>Nozzle
-        <input id="nozzle" list="nozzle-list" autocomplete="off" spellcheck="false" placeholder="Type or pick a nozzle">
-        <datalist id="nozzle-list"></datalist>
-        <span id="nozzle-err" class="field-err" hidden></span>
+        <select id="nozzle"></select>
       </label>
       <label id="scenario-field" hidden>Conditions (demo)
         <select id="scenario"></select>
       </label>
-      <p id="scenario-desc" class="muted small" hidden></p>
+      <aside id="demo-note" class="demo-note" hidden aria-label="Demo note">
+        <span class="demo-note-label">Demo note · not part of the app</span>
+        <p id="demo-note-text"></p>
+        <p id="demo-note-expect" class="muted small"></p>
+      </aside>
     </section>
 
     <div id="alert" class="alert" role="alert" hidden>

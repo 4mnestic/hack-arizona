@@ -58,10 +58,11 @@ def test_nozzles_include_droplet_size(client):
 
 
 def test_scenarios_have_ids_and_titles(client):
-    """Every simulated scenario is listed with an id, title, and description."""
+    """Every simulated scenario is listed with an id, title, demo note, and expected outcome."""
     items = client.get("/api/scenarios").json()
-    assert any(s["id"] == "evening_inversion" for s in items)
-    assert all({"id", "title", "description"} <= s.keys() for s in items)
+    assert items[0]["id"] == "evening_inversion"
+    assert all({"id", "title", "illustrates", "expect"} <= s.keys() for s in items)
+    assert items[0]["expect"] == {"ground": "GO", "spraywait": "STOP"}
 
 
 def test_live_push_mode_without_farm_data_is_stop(client):

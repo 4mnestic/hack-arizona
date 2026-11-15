@@ -22,9 +22,9 @@ async function api(path, body) {
   return res.json();
 }
 
-// Pesticide and nozzle are typed (with suggestions); a name only counts if it matches a known one.
-const known = { pesticide: [], nozzle: [] };
-const applied = { pesticide: null, nozzle: null };
+// The pesticide is typed (with suggestions); a name only counts if it matches a known one.
+const known = { pesticide: [] };
+const applied = { pesticide: null };
 
 function fillList(kind, items, saved) {
   known[kind] = items.map((i) => i.value);
@@ -47,12 +47,15 @@ function canonical(kind) {
 function setupTyped(kind) {
   const input = $(kind);
   // Clear on focus so the full suggestion list shows; put the last good value back if nothing is chosen.
-  input.addEventListener("focus", () => { input.placeholder = applied[kind] || input.placeholder; input.value = ""; });
+  input.addEventListener("focus", () => {
+    input.placeholder = applied[kind] ? `Type to search (now: ${applied[kind]})` : "Type a pesticide name";
+    input.value = "";
+  });
   input.addEventListener("blur", () => { if (!input.value.trim()) input.value = applied[kind] || ""; });
   const apply = (final) => {
     const name = canonical(kind);
     $(`${kind}-err`).hidden = !!name || !final || !input.value.trim();
-    $(`${kind}-err`).textContent = `Unknown ${kind}. Pick one from the list.`;
+    $(`${kind}-err`).textContent = `No ${kind} called "${input.value.trim()}". Keep typing and tap a name in the list. Still using ${applied[kind]}.`;
     if (name && name !== applied[kind]) { input.value = name; applied[kind] = name; update(); }
   };
   input.addEventListener("input", () => apply(false));  // picking a suggestion applies at once
@@ -227,13 +230,18 @@ async function weatherQuery() {
 }
 
 async function update() {
-  const pesticide = applied.pesticide, nozzle = applied.nozzle;
+  const pesticide = applied.pesticide, nozzle = $("nozzle").value;
   store.set("pesticide", pesticide);
   store.set("nozzle", nozzle);
   if (DEMO) {
     store.set("scenario", $("scenario").value);
     const s = scenarios.find((x) => x.id === $("scenario").value);
-    $("scenario-desc").textContent = s?.description || "";
+    $("demo-note-text").textContent = s?.illustrates || "";
+    $("demo-note-expect").hidden = !s?.expect;
+    if (s?.expect) {
+      $("demo-note-expect").textContent =
+        `Expected with the generic label: ground station alone ${s.expect.ground} · SprayWait ${s.expect.spraywait}`;
+    }
   }
   updateForecast(pesticide, nozzle);
   try {
@@ -247,7 +255,7 @@ async function init() {
   if (DEMO) {
     $("mode-badge").hidden = false;
     $("scenario-field").hidden = false;
-    $("scenario-desc").hidden = false;
+    $("demo-note").hidden = false;
     $("mode-link").href = "/";
     $("log-link").href = "/log?mode=demo";
     $("mode-link").textContent = "Live";
@@ -256,13 +264,14 @@ async function init() {
     api("/api/pesticides"), api("/api/nozzles"), DEMO ? api("/api/scenarios") : [],
   ]);
   scenarios = [
-    { id: STATION, title: "Farm station (simulated, live clock)", description: "A dummy 5 ft / 30 ft orchard mast whose weather follows the time of day: inversions at night, mixing by day." },
-    ...scen, { id: PUBLIC, title: "Public forecast near me", description: "Current forecast-model weather at your location (2 m and 80 m)." }];
+    ...scen,
+    { id: STATION, title: "Farm station (simulated, live clock)", illustrates: "A full day on a 5 ft / 30 ft mast: the weather follows the clock, with inversions at night and mixing by day." },
+    { id: PUBLIC, title: "Public forecast near me", illustrates: "The same checks on forecast-model weather at your location (2 m and 80 m), for orchards without a station." }];
   fillList("pesticide", pesticides.map((p) => ({ value: p.name, label: p.category ? `${p.name} (${p.category})` : p.name })), store.get("pesticide"));
-  fillList("nozzle", nozzles.map((n) => ({ value: n.name, label: `${n.name} (${n.asabe_class})` })), store.get("nozzle"));
+  fillSelect($("nozzle"), nozzles.map((n) => ({ value: n.name, label: `${n.name} (${n.asabe_class})` })), store.get("nozzle"));
   if (DEMO) fillSelect($("scenario"), scenarios.map((s) => ({ value: s.id, label: s.title })), store.get("scenario"));
   setupTyped("pesticide");
-  setupTyped("nozzle");
+  $("nozzle").addEventListener("change", update);
   $("scenario").addEventListener("change", update);
   setupAlerts();
   await update();

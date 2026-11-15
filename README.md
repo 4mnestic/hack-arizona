@@ -20,15 +20,18 @@ Pesticide spray can drift beyond the orchard onto neighboring crops, workers, ho
 
 **Live** (`/`): the farm station replays a real day of Oklahoma Mesonet readings (temperature at 1.5 m and 9 m, wind at 2 m and 10 m) in real time. From about 4:15 to 7:30 pm Arizona time it is in a recorded evening inversion: the ground sensor alone says GO, SprayWait says STOP. The **Station** page (`/station`) charts both heights over the day; the **Log** (`/log`) shows each decision and what triggered it.
 
-**Demo** (`/demo`): pick a scenario to see each check.
+**Demo** (`/demo`): each scenario isolates one thing the tool checks. A dashed "Demo note" box says what it illustrates and the expected result; it is a presenter's aid, not part of the field app.
 
-| Scenario | Ground station alone | SprayWait | Why |
+| Scenario | Illustrates | Ground station alone | SprayWait |
 |---|---|---|---|
-| Evening inversion | GO | **STOP** | Warmer air at 30 ft than at 5 ft, wind shifts with height |
-| Calm below, strong wind aloft | GO | **STOP** | Wind above the canopy much stronger than at the ground |
-| Too windy | STOP | **STOP** | Wind above 10 mph |
-| Dead calm | STOP | **STOP** | Wind below 3 mph |
-| Clear midday | GO | **GO** | Air mixing normally, moderate wind |
+| Hidden inversion | Inversion a ground sensor can't see: 4°F warmer at 30 ft, wind fine | GO | **STOP** |
+| Inversion forming | Early warning: same temperature at both heights, mixing has stopped | GO | **CAUTION** |
+| Strong wind above the canopy | Wind speed changing with height: 4.5 mph below, 12 mph above | GO | **STOP** |
+| Wind turning with height | Wind direction changing with height: 120° apart | GO | **STOP** |
+| Good spraying conditions | Control case: no false alarms | GO | **GO** |
+| Hot afternoon | Pesticide limits: GO for the generic label, STOP for Malathion (90°F) | GO | **GO / STOP** |
+| Too windy | Over 10 mph: a single station catches this too | STOP | **STOP** |
+| Dead calm | Under 3 mph: a single station catches this too | STOP | **STOP** |
 
 ## How it works
 
@@ -98,7 +101,7 @@ FARM_API_KEY=devkey .venv/bin/uvicorn api.main:app --host 0.0.0.0 --port 8000
 
 ## Tech stack
 
-Python (FastAPI) rule engine and API, a plain HTML/JS installable web app (PWA), Open-Meteo forecasts, hosted on Render. Tested with pytest (155 tests).
+Python (FastAPI) rule engine and API, a plain HTML/JS installable web app (PWA), Open-Meteo forecasts, hosted on Render. Tested with pytest (158 tests).
 
 ## Team
 

@@ -25,7 +25,7 @@ single_station_decision(reading)               # what a ground-only station woul
 DecisionLog().append(reading, pesticide, d)    # appends to time-stamped spray_log.jsonl
 ```
 
-Scenarios: `evening_inversion` (demo), `clear_midday`, `too_windy`, `dead_calm`, `shear_aloft`, `hot_afternoon`.
+Scenarios (each isolates one thing; `illustrates` holds the demo note and `expect` the ground-alone vs SprayWait outcome, checked by tests): `evening_inversion` (hidden inversion), `inversion_forming`, `shear_aloft`, `wind_direction_shift`, `clear_midday`, `hot_afternoon`, `too_windy`, `dead_calm`.
 
 ## How it works, step by step
 

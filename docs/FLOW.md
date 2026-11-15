@@ -15,7 +15,7 @@ INPUTS
   spraywait/weather/simulated.py         spraywait/pesticides/db.py
   ┌──────────────────────────┐           ┌──────────────────────────────┐
   │ SimulatedSource          │           │ LocalPesticideDB             │
-  │   SCENARIOS (6 scripts)  │           │   reads pesticides.json      │
+  │   SCENARIOS (8 scripts)  │           │   reads pesticides.json      │
   └──────────┬───────────────┘           └──────────────┬───────────────┘
              │ produces                                 │ produces
   spraywait/weather/types.py             spraywait/pesticides/db.py
