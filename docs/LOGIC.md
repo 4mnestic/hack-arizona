@@ -98,7 +98,7 @@ Time of day can only add caution. It is never used to remove or soften a warning
 | Light wind: inversions resist mixing below 5 mph | Supported by NDSU, and weaker winds weaken inversions. We keep UC ANR's 7 mph, which is the more cautious of the two. |
 | Wind direction can flip up to 180 degrees inside an inversion | Supported by NDSU. Backs up the direction-shear check. |
 | 0.5F and 1F cutoffs | Partly supported. They are the band edges in NDSU's Figure 2 (counts of inversions by strength), not official limits. |
-| 1F weak/moderate split and the names weak/moderate/strong | **Assumption.** No source gives these labels. They only change the wording and score; every inversion is STOP either way. |
+| 1F weak/moderate split and the names weak/moderate/strong | **Design choice** (see "Design choices" below). No source gives these labels. They only change the wording and score; every inversion is STOP either way. |
 
 ## 3. Wind speed (`checks/wind.py`)
 
@@ -142,6 +142,27 @@ Uses the temperature at the lowest height.
 
 Low volatility products are never flagged for heat alone, only for a label temperature limit.
 
+## Design choices (numbers with no published limit)
+
+No source we have read gives a number for these. They are our choices, made so that any error leans toward caution. Each one is a constant at the top of its check file, so a PCA or a new source can change it in one place. Swap in a cited value when one is found.
+
+| Number | Where | Why this value | What it can do |
+|---|---|---|---|
+| 0.5F "nearly equal" temperatures | `inversion.py` `NEAR_NEUTRAL_F` | Air normally cools only about 0.1F over 25 ft, so a gap near zero already means the air has stopped mixing upward. 0.5F is also the smallest band NDSU counts as an inversion (Figure 2). | CAUTION only, and only with ground wind under 7 mph |
+| 1F "weaker drop than normal" | `inversion.py` `FORMING_F` | On a sunny day the ground heats the air above it, so near the ground the temperature drop with height is usually much bigger than the textbook rate. In the evening that drop shrinks toward zero before an inversion forms. 1F over the sensor gap is our line for "shrinking". | CAUTION only, and only 2 pm to 9 am with ground wind under 7 mph |
+| 1F weak/moderate split | `inversion.py` `MODERATE_INVERSION_F` | Matches the 1F band in NDSU Figure 2. | Wording and score only. Every inversion is STOP |
+| 5 mph speed shear | `wind.py` `SHEAR_SPEED_CAUTION_MPH` | Most of the 7 mph-wide label window (3 to 10 mph). A ground reading that far off from the air above it is not a good guide to where the spray goes. | CAUTION |
+| 8 mph speed shear | `wind.py` `SHEAR_SPEED_STOP_MPH` | Wider than the whole 3 to 10 mph window. With the default limits, an 8 mph gap always puts one height outside the window, so the wind speed check already gives STOP. This rule only adds something for labels with wider wind limits. | STOP |
+| 45 degree direction shear | `wind.py` `SHEAR_DIR_CAUTION_DEG` | One eighth of the compass (for example north versus northeast). Spray aloft heads noticeably away from where the ground wind points. | CAUTION |
+| 90 degree direction shear | `wind.py` `SHEAR_DIR_STOP_DEG` | Spray aloft moves sideways to the ground wind, so buffers and sensitive neighbors judged from the ground wind are the wrong ones. NDSU says direction can differ by up to 180 degrees inside an inversion, so differences this large do happen. | STOP |
+| 1 mph minimum for comparing direction | `wind.py` `MIN_SPEED_FOR_DIRECTION_MPH` | In nearly still air a wind vane does not point reliably, so the direction is noise. The calm-wind STOP already covers those readings. | Skips the direction check |
+| 1 mph edge margin | `wind.py` `EDGE_MARGIN_MPH` | Wind varies by about this much from one moment to the next, so a reading within 1 mph of a label limit can cross it while spraying. | CAUTION only |
+| 75F / 85F for high volatility, 85F for moderate | `volatility.py` | Round numbers. Vapor drift rises with heat. We step from CAUTION to STOP for the most volatile products, and only warn for moderate ones. A label maximum temperature, when set, always takes priority. | CAUTION or STOP for 3 of the 47 products (see Known limits) |
+| 7 mph for fine droplets | `volatility.py` `FINE_DROPLET_WIND_CAUTION_MPH` | The same 7 mph as the UC ANR light-wind rule. Rough example from NDSU's fall speed: a 200 micron droplet falling about 3 inches per second from 10 ft takes about 40 seconds to land. At 7 mph it moves about 400 ft sideways in that time; at 3 mph, about 175 ft. Drift grows directly with wind speed, so the cutoff is a point on a slope, not a hard edge. | CAUTION only |
+| 15 minutes stale | `data_quality.py` `STALE_AFTER` | The Mesonet feed reports every 5 minutes, so 15 minutes is three missed readings in a row. | CAUTION only |
+
+None of these can turn a STOP into a GO. The only STOP-level choices (8 mph and 90 degree shear, 85F for highly volatile products) make the tool stricter, not looser.
+
 ## Spray windows from the forecast (`spraywait/windows.py`)
 
 The same five checks are run on every hour of the forecast, using the chosen pesticide and nozzle. Each hour gets its own GO, CAUTION or STOP. Then two things are reported:
@@ -168,7 +189,7 @@ Every cutoff is a constant at the top of its check file. Change it there and the
 
 ## Known limits
 
-- Sourced so far: the inversion wind and time rules above, the 3F strong-inversion cutoff (NDSU), and the 3 to 10 mph window (common guidance named in the challenge brief). Still assumptions: the 1F moderate cutoff, all wind shear cutoffs (5 and 8 mph, 45 and 90 degrees), the volatility temperatures (75F, 85F), the 7 mph fine-droplet cutoff, the 1 mph edge margin and the 15-minute stale limit.
+- Sourced so far: the inversion wind and time rules above, the 3F strong-inversion cutoff (NDSU), and the 3 to 10 mph window (common guidance named in the challenge brief). Everything else is a design choice with a stated reason; see "Design choices" above.
 - The inversion window is fixed hours, not real sunrise and sunset. Once the orchard's location is an input, compute it (3 to 4 hours before sunset until about an hour after sunrise).
 - Cloud and rain are not inputs. The source says inversions are expected every day unless there is continuous heavy overcast or continuous rain, and that clear skies (cloud cover 25% or less) favor them.
 - Other signs the source lists are not used: evening and night wind much lighter than daytime wind, dew, frost, fog, sound carrying far, smoke hanging in the air.
