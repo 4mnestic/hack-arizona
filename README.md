@@ -56,12 +56,13 @@ TBD, testing is important.
 ## Team breakdown
 
 ### Joy
-* Understand pesticide data and help Leo integrate the pesticide data into the inversion and shear models
+* Understand pesticide data and help Leo integrate the pesticide data into the inversion and shear models. Involved a CSV that maps names to spray metrics, and the spray metrics are passed to the models.
 * Design app UI. Don't start actually building until model MVP is ready
 
 ### Leo
 * Research inversion and shear models, so that they are science-backed.
 * Implement different variations of the models
+* Implement MVP 
 
 ### Zach
 * Maintain README
