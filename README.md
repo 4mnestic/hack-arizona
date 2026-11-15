@@ -1,67 +1,53 @@
-# hack-arizona
+# Spray or Wait
 
-Spray-decision assistant for orchard pesticide application. Given weather, pesticide, and orchard data, it returns **GO**, **CAUTION**, or **STOP**, with plain-language reasons.
+Go, Caution, or Stop for orchard pesticide spraying, with the reasons why.
 
-Advisory only. The pesticide label is the law.
+<!-- TODO: screenshot of the phone showing a STOP decision and its reason -->
 
-## Architecture
+> **Status:** in development. See the [development plan](docs/PLAN.md).
 
-```
-Inputs (weather, pesticide, orchard)
-        │  standardized SprayContext
-   ┌────┼──────────────┬──────────────┐
-Inversion   Wind/drift    Other checks
-   └────┼──────────────┴──────────────┘
-        ▼
-Status model → GO / CAUTION / STOP + reasons
-```
+## The problem
 
-- **Standardized input:** one `SprayContext` combining weather, pesticide, and orchard data, with consistent units and timestamps.
-- **Model output:** every model returns a status, a score, and its reasons.
-- **Status model:** the most severe status wins, and all reasons are reported.
-- **Rule-based:** models use physics and label rules, so every decision can be explained.
-- **Fail safe:** missing or stale data gives CAUTION, never GO.
+<!-- TODO, about 3 sentences: on calm, clear mornings, inversions trap spray, which then drifts onto neighbors, water, and bees. Growers decide by feel. Add one sourced statistic. -->
 
-## Components
+## What it does
 
-1. **Weather inputs:** current conditions and an hourly forecast from public sources.
-2. **Inversion model:** whether an inversion is likely and at what height, compared with canopy height. Thresholds depend on the pesticide.
-3. **Wind model:** speed, gusts, and how dangerous the wind is, including its direction relative to sensitive areas.
-4. **Other checks:** rain forecast, temperature, humidity, volatility, and label limits.
-5. **Status model:** combines all model results into one decision with reasons.
+<!-- TODO, 3 bullets: inputs (weather, pesticide, orchard) → GO / CAUTION / STOP → a plain-language reason. -->
 
-## Inputs
+## Demo
 
-- **Weather:** temperature and wind at multiple heights (plan for 5ft and 30ft, as specified in the challenge prompt, liable to change).
-- **Pesticide:** droplet size, and vapor pressure.
-- **Orchard:** location, canopy height, and nearby sensitive areas.
+<!-- TODO: GIF or video link. -->
 
-## Goals
+| Scenario | Decision | Reason |
+|---|---|---|
+| Calm, clear dawn | STOP | <!-- TODO --> |
+| Same morning, volatile pesticide | STOP | <!-- TODO --> |
+| Mid-morning breeze, away from sensitive areas | GO | <!-- TODO --> |
 
-**Core:** inputs, inversion, wind, and status models, with unit tests. Plan for how to implement a mobile interface all the while. When the models are MVP-ready, we'll build the mobile app (android and iOS compatible).
+## How it works
 
-**Stretch:**
-- Forecast of the next safe spray window
-- ML-based models
+<!-- TODO: final architecture diagram. Explain the inversion, wind, and status models in one line each. -->
 
-## Testing
+### Science
 
-TBD, testing is important.
+<!-- TODO: one cited source per threshold (inversion detection, wind limits, volatility). -->
 
-## Presentation
+## Run it
 
-- Storytelling: a orchard farmer starts his day and uses the app to help inform his decisions
-- A live demo and a fake demo for multiple example scenarios
+<!-- TODO: copy-paste commands to install, run, and test. -->
 
-## Team breakdown
+## Tech stack
 
-### Joy
-* Understand pesticide data and help Leo integrate the pesticide data into the inversion and shear models
-* Design app UI. Don't start actually building until model MVP is ready
+<!-- TODO: one line. -->
 
-### Leo
-* Research inversion and shear models, so that they are science-backed.
-* Implement different variations of the models
+## Team
 
-### Zach
-* Maintain README
+<!-- TODO: names and roles, one line each. -->
+
+## What's next
+
+<!-- TODO: forecast of the next safe spray window, ML models. -->
+
+---
+
+*Advisory only. The pesticide label is the law.*
