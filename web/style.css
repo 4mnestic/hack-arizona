@@ -34,8 +34,9 @@ main {
   margin: 0 auto;
   padding: max(16px, env(safe-area-inset-top)) 16px max(24px, env(safe-area-inset-bottom));
 }
-header { display: flex; justify-content: space-between; align-items: baseline; }
-h1 { font-size: 1.35rem; margin: 0 0 12px; }
+header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+h1 { font-size: 1.6rem; margin: 0; display: flex; align-items: center; gap: 10px; }
+.logo { width: 56px; height: 56px; border-radius: 14px; flex-shrink: 0; }
 h2 { font-size: 0.85rem; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); margin: 22px 0 8px; }
 .muted { color: var(--muted); }
 .small { font-size: 0.85rem; }
