@@ -12,6 +12,8 @@
     .download { display: grid; gap: 6px; margin-top: 20px; }
     .download .button { justify-content: center; font-size: 1.05rem; font-weight: 600; min-height: 56px; }
     .download.primary .button { background: var(--text); color: var(--bg); border-color: var(--text); }
+    .log-table td { font-size: 0.9rem; vertical-align: top; }
+    .log-table tr.changed td { font-weight: 700; }
   </style>
 </head>
 <body>
@@ -31,6 +33,13 @@
       <a class="button" href="/api/log.csv?mode=demo" download>Download demo log</a>
       <span id="demo-info" class="muted small center"></span>
     </div>
+
+    <h2>Recent (live)</h2>
+    <p id="empty" class="muted small" hidden>No entries yet.</p>
+    <table class="levels log-table">
+      <thead><tr><th>Time</th><th>Pesticide</th><th>Status</th><th>Triggered by</th></tr></thead>
+      <tbody id="entries"></tbody>
+    </table>
 
     <footer class="muted small">Advisory only. The pesticide label is the law.</footer>
   </main>
