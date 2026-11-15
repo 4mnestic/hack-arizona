@@ -1,6 +1,6 @@
 # Development notes
 
-Setup, usage, and layout for the `spraywait` package. (Project overview is in README.md, team plan in docs/PLAN.md, a file-level diagram in docs/FLOW.md, every rule and cutoff in docs/LOGIC.md.)
+Setup, usage, and layout for the `spraywait` package. (Project overview is in README.md, team plan in docs/PLAN.md, every rule and cutoff in docs/LOGIC.md.)
 
 ## Setup
 
@@ -52,6 +52,49 @@ Each reading, the pesticide, the warnings, and the final answer are written to a
 
 **6. Running it** (`demo.py`, `tests/`)
 `demo.py` runs one scenario and prints both answers. The tests run every check with known inputs and confirm the answers are right.
+
+## Flow diagram (by file)
+
+```
+INPUTS
+  Weather reading (spraywait/weather/)            Spray setup (spraywait/spray_setup.py)
+  Reading = timestamp + levels                    pesticide (pesticides/db.py, pesticides.json)
+    each level: height_ft, temp_f,                + nozzle (nozzles/db.py, nozzles.json)
+    wind_mph, wind_dir_deg                        = one Pesticide: volatility, droplet size,
+  from: farm station push / Mesonet replay /        wind limits, max temp
+        dummy station / simulated scenarios /     (no nozzle -> fine droplets)
+        Open-Meteo forecast (per hour)
+          |                                                 |
+          +------------------------+------------------------+
+                                   v
+CHECKS  spraywait/checks/__init__.py  run_all_checks(reading, pesticide)
+  data_quality.py   no data -> STOP; one height or stale -> CAUTION
+  inversion.py      warmer aloft -> STOP (weak/moderate/strong);
+                    near-equal + light wind -> CAUTION; weak drop + evening + light wind -> CAUTION
+  wind.py           speed outside label limits -> STOP, near edge -> CAUTION;
+                    speed/direction shear between heights -> CAUTION/STOP
+  volatility.py     over label max temp -> STOP; volatile + hot -> CAUTION/STOP;
+                    fine droplets + breeze -> CAUTION
+          each returns list[Flag(severity, check, reason, score)]   (checks/flag.py)
+                                   v
+DECISION  spraywait/decision.py
+  decide()                   any STOP -> STOP, any CAUTION -> CAUTION, none -> GO
+                             reasons = every flag, worst first; risk score 0-100
+  single_station_decision()  lowest height only, wind + volatility (what a ground station says)
+  windows.py plan_windows()  decide() on every forecast hour -> next GO window, first worse hour
+                                   v
+RECORD + APP
+  log.py         DecisionLog -> spray_log.jsonl (time-stamped), rows/CSV for /log
+  api/main.py    FastAPI: /api/decision, /api/forecast, /api/station, /api/log, /api/readings
+  web/           PWA pages: / (live), /demo, /station, /log
+```
+
+## Extending
+
+- New weather source (NWS, sensor tower): subclass `WeatherSource` in `spraywait/weather/`, return a `Reading`. For a real station mast, keep the payload format in `station.py` and only replace what sends it.
+- New pesticide source (CSV, online): subclass `PesticideDB` in `spraywait/pesticides/`, return `Pesticide` objects.
+- New check: add a file in `spraywait/checks/` with `check_x(reading, pesticide, now) -> list[Flag]`, then append it to `ALL_CHECKS` in `checks/__init__.py`.
+- Tune thresholds: constants at the top of each `checks/*.py` file (reasons for each are in docs/LOGIC.md).
 
 ## Layout
 
