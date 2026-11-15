@@ -60,7 +60,7 @@ function render(data) {
   }));
 
   const g = data.ground_only?.status;
-  $("compare").hidden = !g || g === d.status;
+  $("compare").hidden = !DEMO || !g || g === d.status;  // pitch line: demo mode only
   $("compare").textContent = `A ground-level station alone would say ${g}. Measuring above the canopy changes the answer.`;
 
   $("levels-section").hidden = !data.reading.levels.length;
