@@ -1,0 +1,132 @@
+# Decision logic
+
+Every rule the tool uses to turn weather and spray choices into GO, CAUTION or STOP. Plain words first, exact numbers in the tables. For the file layout see FLOW.md; for setup and usage see DEVELOPMENT.md.
+
+Advisory only. The pesticide label is the law.
+
+## The big idea
+
+1. Take the latest weather reading (two or more heights) and the spray setup (pesticide, plus nozzle if one is chosen).
+2. Run five separate checks. Each check looks at one thing and may raise a warning. A warning is either CAUTION or STOP and has a plain-language reason.
+3. Combine the warnings: any STOP means STOP, otherwise any CAUTION means CAUTION, otherwise GO.
+4. Every reason is kept and shown, worst first, not just the worst one.
+5. Write the reading, the warnings and the answer to the log.
+
+## Combining warnings (`spraywait/decision.py`)
+
+| Warnings raised | Answer |
+|---|---|
+| At least one STOP | STOP |
+| No STOP, at least one CAUTION | CAUTION |
+| None | GO ("air is mixing, wind is within label limits at every height, and no shear detected") |
+
+There is no scoring or weighting. One STOP outweighs any number of other results.
+
+## Inputs the checks use
+
+- **Weather reading:** a timestamp plus a list of heights. Each height has temperature (F), wind speed (mph) and wind direction (degrees, may be missing). The checks always compare the lowest height with the highest. Extra heights in between are not used.
+- **Pesticide:** label wind limits (default 3 to 10 mph), an optional label maximum temperature, volatility (low, moderate or high) and droplet size.
+- **Nozzle:** if one is chosen, its droplet size replaces the pesticide's. If none is chosen, droplets are assumed to be fine, the worst case for drift, and the pesticide's own droplet size is ignored.
+
+## 1. Data quality (`checks/data_quality.py`)
+
+Fail safe: missing or old data can never give GO.
+
+| Situation | Result |
+|---|---|
+| No levels at all | STOP |
+| Only one measurement height (cannot check inversion or shear) | CAUTION |
+| Reading is more than 15 minutes old | CAUTION |
+
+## 2. Inversion (`checks/inversion.py`)
+
+An inversion means the air is warmer higher up than at the ground. It traps spray close to the ground, where it can travel sideways a long way. The difference used is the top temperature minus the bottom temperature.
+
+| Situation | Result |
+|---|---|
+| Top is warmer than bottom | **STOP**, named weak (under 1F), moderate (1 to 2F) or strong (2F or more) |
+| Top is not warmer, but is less than 0.5F cooler (nearly equal), **and ground wind is under 7 mph** | CAUTION: an inversion may be forming |
+| Same nearly-equal temperatures, **but ground wind is 7 mph or more** | No warning (moving air keeps the layer mixed) |
+| Top is cooler by 0.5F to 1F, **and** it is 2 pm to 9 am, **and** ground wind is under 7 mph | CAUTION: the temperature drop is weaker than normal, so conditions favor an inversion forming |
+| Anything else (normal cooling with height) | No warning |
+
+The reason text adds context when it is true: it is late afternoon through early morning, or the ground wind is light (so the layer is unlikely to mix out).
+
+Time of day can only add caution. It is never used to remove or soften a warning, because the server's clock may not match the farm's clock.
+
+**What is sourced and what is not** (source: UC ANR, "Surface Inversions Cause Spray Drift", see Sources below):
+
+| Rule | Status |
+|---|---|
+| Any inversion means STOP | Supported. The page says "If you suspect there's an inversion, then don't spray." |
+| Measure at the ground and several meters above | Supported. 5 ft and 30 ft (1.5 m and 9 m) fits. The page also says field temperatures often differ a lot from regional forecasts, which is why one ground or forecast reading is not enough. |
+| Light wind means an inversion can persist: 7 mph | Supported. The page says inversions are expected daily unless wind stays above 7 mph for the whole night between sunset and sunrise ("although even this isn't always true"). The page writes "7 m/h", read here as mph. A single reading cannot show a whole night, so this is a snapshot approximation. |
+| Window of 2 pm to 9 am | Supported in shape, approximated in numbers. The page says inversions begin 3 to 4 hours before sunset, peak just before sunrise, and fade within about an hour after sunrise. We have no sunrise or sunset times yet, so we use a fixed window wide enough to cover that rule all year. It only adds caution. |
+| 0.5F, 1F and 2F temperature cutoffs and the weak/moderate/strong names | **Assumption.** The page gives no temperature numbers. |
+
+## 3. Wind speed (`checks/wind.py`)
+
+Checked separately at every height. The limits come from the pesticide (default 3 to 10 mph).
+
+| Situation | Result |
+|---|---|
+| Below the minimum | STOP: too calm, often means an inversion and droplets hang and drift unpredictably |
+| Above the maximum | STOP: too strong, droplets carried off target |
+| Within 1 mph above the minimum | CAUTION: near the calm limit |
+| Within 1 mph below the maximum | CAUTION: near the upper limit |
+| Otherwise | No warning |
+
+## 4. Wind shear (`checks/wind.py`)
+
+Shear means the wind changes with height, so the ground wind does not show where the spray will go once it rises. It compares the lowest and highest heights.
+
+| Wind aloft minus wind at ground | Result |
+|---|---|
+| 8 mph or more | STOP |
+| 5 to 8 mph | CAUTION |
+
+| Difference in direction | Result |
+|---|---|
+| 90 degrees or more | STOP |
+| 45 to 90 degrees | CAUTION |
+
+Direction is only compared when both heights report a direction and both winds are at least 1 mph (direction is meaningless in near-still air). The difference wraps around, so 350 and 10 degrees differ by 20.
+
+## 5. Volatility, label temperature and droplets (`checks/volatility.py`)
+
+Uses the temperature at the lowest height.
+
+| Situation | Result |
+|---|---|
+| Hotter than the pesticide's label maximum temperature | STOP |
+| Highly volatile product at 85F or more | STOP: vapor keeps drifting for hours |
+| Highly volatile product at 75F to 85F | CAUTION |
+| Moderately volatile product at 85F or more | CAUTION |
+| Fine droplets and wind of 7 mph or more at any height | CAUTION: fine droplets drift more easily (names the nozzle if one is set) |
+
+Low volatility products are never flagged for heat alone, only for a label temperature limit.
+
+## The "single station" comparison (`single_station_decision`)
+
+For demos only. It shows what a basic ground-level station would say: it uses just the lowest height and runs only the wind speed and volatility checks. It has no inversion, shear or data-quality checks. The gap between this answer and the full answer is what the tool adds.
+
+## Where to change a number
+
+Every cutoff is a constant at the top of its check file. Change it there and the tests show what moves.
+
+## Known limits
+
+- Sourced so far: the inversion wind and time rules above, and the 3 to 10 mph window (common guidance named in the challenge brief). Still assumptions: the inversion temperature cutoffs, all wind shear cutoffs (5 and 8 mph, 45 and 90 degrees), the volatility temperatures (75F, 85F), the 7 mph fine-droplet cutoff, the 1 mph edge margin and the 15-minute stale limit.
+- The inversion window is fixed hours, not real sunrise and sunset. Once the orchard's location is an input, compute it (3 to 4 hours before sunset until about an hour after sunrise).
+- Cloud and rain are not inputs. The source says inversions are expected every day unless there is continuous heavy overcast or continuous rain, and that clear skies (cloud cover 25% or less) favor them.
+- Other signs the source lists are not used: evening and night wind much lighter than daytime wind, dew, frost, fog, sound carrying far, smoke hanging in the air.
+- Terrain is not an input. The source says inversions flow like water, drain downhill and collect in low spots, and that shade from trees or hills can start one earlier and keep it later.
+- The inversion temperature cutoffs assume sensors roughly 25 ft apart. Heights far apart, like the Open-Meteo source (about 7 ft and 262 ft), are not calibrated.
+- Gusts, humidity, orchard details (canopy height, sensitive neighbors) and wind direction relative to neighbors are not checked yet.
+- The pesticide values are illustrative, from memory and not looked up. The label governs.
+- The EPA drift page and the UC Extension weather-data PDF could not be used (one gave no usable numbers, one link is dead), so shear and volatility have no source yet.
+
+## Sources
+
+- UC ANR, "Surface Inversions Cause Spray Drift": https://ucanr.edu/blog/topics-subtropics/article/surface-inversions-cause-spray-drift
+- Challenge brief ("Spray or Wait?", Hack Arizona AgX): inversion defined as upper temperature higher than lower; 3 to 10 mph as common wind guidance; flag large wind differences between heights; actual limits depend on the pesticide label.

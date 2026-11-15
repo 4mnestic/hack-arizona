@@ -35,9 +35,13 @@ def test_apply_nozzle_overrides_spray_fields_only():
     assert out.max_temp_f == p.max_temp_f and p.droplet_size == "coarse"
 
 
-def test_apply_nozzle_none_is_identity():
-    """Without a nozzle the pesticide is returned unchanged."""
-    assert apply_nozzle(DEFAULT_PESTICIDE, None) is DEFAULT_PESTICIDE
+def test_apply_nozzle_none_assumes_finest_droplets():
+    """Without a nozzle droplets default to fine, ignoring the pesticide's own droplet_size."""
+    coarse = SpraySetup().pesticides.get("Horticultural Oil")
+    assert coarse.droplet_size == "coarse"
+    out = apply_nozzle(coarse, None)
+    assert out.droplet_size == "fine" and out.nozzle == ""
+    assert out.max_temp_f == coarse.max_temp_f
 
 
 @pytest.mark.parametrize("name", [None, "", "generic (label defaults)"])

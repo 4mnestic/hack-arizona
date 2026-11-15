@@ -7,9 +7,12 @@ from spraywait.pesticides import DEFAULT_PESTICIDE, LocalPesticideDB, Pesticide
 
 
 def apply_nozzle(pesticide: Pesticide, nozzle: Nozzle | None) -> Pesticide:
-    """The nozzle sets droplet size and pressure; everything else comes from the pesticide."""
+    """The nozzle sets droplet size and pressure; everything else comes from the pesticide.
+
+    With no nozzle we assume the finest droplets (worst case for drift) and ignore the pesticide's own droplet_size.
+    """
     if nozzle is None:
-        return pesticide
+        return replace(pesticide, droplet_size="fine")
     return replace(
         pesticide,
         droplet_size=nozzle.droplet_size,

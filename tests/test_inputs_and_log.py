@@ -58,7 +58,8 @@ def test_log_appends_and_reads_back(tmp_path, now):
     assert entries[-1]["reading"]["timestamp"] == now.isoformat()
 
     rows = log.rows()
-    assert rows[0]["status"] == "GO"
+    assert rows[0]["status"] == "CAUTION"  # early warning: weak temperature drop, light wind, late afternoon
+    assert "inversion" in rows[0]["triggered"]
     assert "inversion" in rows[-1]["triggered"]
     assert rows[-1]["temp 30ft"] == 61.0
 
