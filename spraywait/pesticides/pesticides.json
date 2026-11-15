@@ -1,0 +1,118 @@
+{
+  "_note": "Illustrative values for common California orchard products. Vapor pressures are approximate (mPa at ~25C, from public pesticide property databases). Wind and temperature limits reflect typical label language, not any specific product label. The actual label governs.",
+  "pesticides": [
+    {
+      "name": "Captan",
+      "category": "fungicide",
+      "product_examples": "Captan 80 WDG",
+      "vapor_pressure_mpa": 0.0042,
+      "volatility": "low",
+      "droplet_size": "medium",
+      "min_wind_mph": 3,
+      "max_wind_mph": 10,
+      "notes": "Bloom-time fungicide in almonds and stone fruit."
+    },
+    {
+      "name": "Abamectin",
+      "category": "insecticide/miticide",
+      "product_examples": "Agri-Mek SC",
+      "vapor_pressure_mpa": 0.00037,
+      "volatility": "low",
+      "droplet_size": "fine",
+      "min_wind_mph": 3,
+      "max_wind_mph": 10,
+      "notes": "Fine droplets for mite coverage increase drift sensitivity."
+    },
+    {
+      "name": "Bifenthrin",
+      "category": "insecticide (pyrethroid)",
+      "product_examples": "Brigade WSB",
+      "vapor_pressure_mpa": 0.0178,
+      "volatility": "low",
+      "droplet_size": "medium",
+      "min_wind_mph": 3,
+      "max_wind_mph": 10,
+      "notes": "Highly toxic to bees and aquatic life; drift to waterways is a key concern."
+    },
+    {
+      "name": "Spinosad",
+      "category": "insecticide",
+      "product_examples": "Entrust, Success",
+      "vapor_pressure_mpa": 0.00001,
+      "volatility": "low",
+      "droplet_size": "medium",
+      "min_wind_mph": 3,
+      "max_wind_mph": 10,
+      "notes": "Low volatility; drift risk is mainly droplet transport."
+    },
+    {
+      "name": "Malathion",
+      "category": "insecticide (organophosphate)",
+      "product_examples": "Malathion 8 Aquamul",
+      "vapor_pressure_mpa": 3.1,
+      "volatility": "moderate",
+      "droplet_size": "medium",
+      "min_wind_mph": 3,
+      "max_wind_mph": 10,
+      "max_temp_f": 90,
+      "notes": "Measurable vapor loss in heat; avoid hot afternoons."
+    },
+    {
+      "name": "Horticultural Oil",
+      "category": "insecticide (dormant/summer oil)",
+      "product_examples": "Omni Supreme Spray",
+      "vapor_pressure_mpa": 0.0001,
+      "volatility": "low",
+      "droplet_size": "coarse",
+      "min_wind_mph": 3,
+      "max_wind_mph": 10,
+      "max_temp_f": 90,
+      "notes": "Risk of leaf burn above about 90F; not a drift issue but a label limit."
+    },
+    {
+      "name": "Wettable Sulfur",
+      "category": "fungicide/miticide",
+      "product_examples": "Microthiol Disperss",
+      "vapor_pressure_mpa": 0.0001,
+      "volatility": "low",
+      "droplet_size": "medium",
+      "min_wind_mph": 3,
+      "max_wind_mph": 10,
+      "max_temp_f": 90,
+      "notes": "Phytotoxic in heat; many labels say do not apply above 90F."
+    },
+    {
+      "name": "Mancozeb",
+      "category": "fungicide",
+      "product_examples": "Dithane, Manzate",
+      "vapor_pressure_mpa": 0.013,
+      "volatility": "low",
+      "droplet_size": "medium",
+      "min_wind_mph": 3,
+      "max_wind_mph": 10,
+      "notes": ""
+    },
+    {
+      "name": "Glyphosate",
+      "category": "herbicide (orchard floor)",
+      "product_examples": "Roundup PowerMax",
+      "vapor_pressure_mpa": 0.0131,
+      "volatility": "low",
+      "droplet_size": "coarse",
+      "min_wind_mph": 3,
+      "max_wind_mph": 10,
+      "notes": "Ground spray under trees; drift onto green bark or suckers injures trees."
+    },
+    {
+      "name": "Oxyfluorfen",
+      "category": "herbicide (orchard floor)",
+      "product_examples": "Goal 2XL",
+      "vapor_pressure_mpa": 0.026,
+      "volatility": "low",
+      "droplet_size": "coarse",
+      "min_wind_mph": 3,
+      "max_wind_mph": 10,
+      "notes": "Drift onto foliage causes spotting; keep to coarse droplets."
+    }
+  ]
+}
