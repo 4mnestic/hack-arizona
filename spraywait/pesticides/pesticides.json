@@ -1,5 +1,5 @@
 {
-  "_note": "Illustrative values for common California orchard products. Vapor pressures are approximate (mPa at ~25C, from public pesticide property databases). Wind and temperature limits reflect typical label language, not any specific product label. The actual label governs.",
+  "_note": "Illustrative values for common California orchard products. Vapor pressures are approximate (mPa at about 25C), recalled from public pesticide property databases and NOT verified here; null means not filled in. Volatility: moderate if above about 1 mPa, otherwise low, high for known volatile formulations. Wind and temperature limits reflect typical label language, not any specific product label. The actual label governs.",
   "pesticides": [
     {
       "name": "Captan",
@@ -38,7 +38,7 @@
       "name": "Spinosad",
       "category": "insecticide",
       "product_examples": "Entrust, Success",
-      "vapor_pressure_mpa": 0.00001,
+      "vapor_pressure_mpa": 1e-05,
       "volatility": "low",
       "droplet_size": "medium",
       "min_wind_mph": 3,
@@ -90,7 +90,7 @@
       "droplet_size": "medium",
       "min_wind_mph": 3,
       "max_wind_mph": 10,
-      "notes": ""
+      "notes": "Published values vary (about 0.01 to 0.1 mPa)."
     },
     {
       "name": "Glyphosate",
@@ -113,6 +113,416 @@
       "min_wind_mph": 3,
       "max_wind_mph": 10,
       "notes": "Drift onto foliage causes spotting; keep to coarse droplets."
+    },
+    {
+      "name": "Chlorantraniliprole",
+      "category": "insecticide (diamide)",
+      "product_examples": "Altacor",
+      "vapor_pressure_mpa": 6.3e-09,
+      "volatility": "low",
+      "droplet_size": "medium",
+      "min_wind_mph": 3,
+      "max_wind_mph": 10,
+      "notes": "Very low volatility; drift risk is droplet transport."
+    },
+    {
+      "name": "Methoxyfenozide",
+      "category": "insecticide (IGR)",
+      "product_examples": "Intrepid 2F",
+      "vapor_pressure_mpa": null,
+      "volatility": "low",
+      "droplet_size": "medium",
+      "min_wind_mph": 3,
+      "max_wind_mph": 10,
+      "notes": "Caterpillar growth regulator; vapor pressure not filled in, check a property database."
+    },
+    {
+      "name": "Spirotetramat",
+      "category": "insecticide",
+      "product_examples": "Movento",
+      "vapor_pressure_mpa": null,
+      "volatility": "low",
+      "droplet_size": "medium",
+      "min_wind_mph": 3,
+      "max_wind_mph": 10,
+      "notes": "Systemic; vapor pressure not filled in, check a property database."
+    },
+    {
+      "name": "Spinetoram",
+      "category": "insecticide",
+      "product_examples": "Delegate WG",
+      "vapor_pressure_mpa": null,
+      "volatility": "low",
+      "droplet_size": "medium",
+      "min_wind_mph": 3,
+      "max_wind_mph": 10,
+      "notes": "Related to spinosad; vapor pressure not filled in."
+    },
+    {
+      "name": "Imidacloprid",
+      "category": "insecticide (neonicotinoid)",
+      "product_examples": "Admire Pro",
+      "vapor_pressure_mpa": 4e-07,
+      "volatility": "low",
+      "droplet_size": "medium",
+      "min_wind_mph": 3,
+      "max_wind_mph": 10,
+      "notes": "Toxic to bees; avoid drift onto blooming plants."
+    },
+    {
+      "name": "Acetamiprid",
+      "category": "insecticide (neonicotinoid)",
+      "product_examples": "Assail 30SG",
+      "vapor_pressure_mpa": 0.000173,
+      "volatility": "low",
+      "droplet_size": "medium",
+      "min_wind_mph": 3,
+      "max_wind_mph": 10,
+      "notes": "Toxic to bees; avoid drift onto blooming plants."
+    },
+    {
+      "name": "Phosmet",
+      "category": "insecticide (organophosphate)",
+      "product_examples": "Imidan 70-W",
+      "vapor_pressure_mpa": 0.065,
+      "volatility": "low",
+      "droplet_size": "medium",
+      "min_wind_mph": 3,
+      "max_wind_mph": 10,
+      "notes": "Check label for restrictions near bloom and bees."
+    },
+    {
+      "name": "Carbaryl",
+      "category": "insecticide (carbamate)",
+      "product_examples": "Sevin XLR Plus",
+      "vapor_pressure_mpa": 0.04,
+      "volatility": "low",
+      "droplet_size": "medium",
+      "min_wind_mph": 3,
+      "max_wind_mph": 10,
+      "notes": "Highly toxic to bees; avoid drift onto blooming plants."
+    },
+    {
+      "name": "Permethrin",
+      "category": "insecticide (pyrethroid)",
+      "product_examples": "Perm-Up, Pounce",
+      "vapor_pressure_mpa": 0.0022,
+      "volatility": "low",
+      "droplet_size": "medium",
+      "min_wind_mph": 3,
+      "max_wind_mph": 10,
+      "notes": "Toxic to bees and aquatic life; protect waterways from drift."
+    },
+    {
+      "name": "Lambda-cyhalothrin",
+      "category": "insecticide (pyrethroid)",
+      "product_examples": "Warrior II",
+      "vapor_pressure_mpa": 0.0002,
+      "volatility": "low",
+      "droplet_size": "medium",
+      "min_wind_mph": 3,
+      "max_wind_mph": 10,
+      "notes": "Toxic to bees and aquatic life; protect waterways from drift."
+    },
+    {
+      "name": "Esfenvalerate",
+      "category": "insecticide (pyrethroid)",
+      "product_examples": "Asana XL",
+      "vapor_pressure_mpa": 0.0012,
+      "volatility": "low",
+      "droplet_size": "medium",
+      "min_wind_mph": 3,
+      "max_wind_mph": 10,
+      "notes": "Toxic to bees and aquatic life; protect waterways from drift."
+    },
+    {
+      "name": "Diflubenzuron",
+      "category": "insecticide (IGR)",
+      "product_examples": "Dimilin 2L",
+      "vapor_pressure_mpa": 0.00012,
+      "volatility": "low",
+      "droplet_size": "medium",
+      "min_wind_mph": 3,
+      "max_wind_mph": 10,
+      "notes": "Growth regulator; toxic to aquatic invertebrates."
+    },
+    {
+      "name": "Pyriproxyfen",
+      "category": "insecticide (IGR)",
+      "product_examples": "Esteem 35 WP",
+      "vapor_pressure_mpa": 0.0125,
+      "volatility": "low",
+      "droplet_size": "medium",
+      "min_wind_mph": 3,
+      "max_wind_mph": 10,
+      "notes": "Growth regulator for scale and whitefly."
+    },
+    {
+      "name": "Emamectin benzoate",
+      "category": "insecticide",
+      "product_examples": "Proclaim",
+      "vapor_pressure_mpa": null,
+      "volatility": "low",
+      "droplet_size": "medium",
+      "min_wind_mph": 3,
+      "max_wind_mph": 10,
+      "notes": "Vapor pressure not filled in, check a property database."
+    },
+    {
+      "name": "Spirodiclofen",
+      "category": "miticide",
+      "product_examples": "Envidor 2SC",
+      "vapor_pressure_mpa": null,
+      "volatility": "low",
+      "droplet_size": "fine",
+      "min_wind_mph": 3,
+      "max_wind_mph": 10,
+      "notes": "Fine droplets for mite coverage increase drift sensitivity."
+    },
+    {
+      "name": "Etoxazole",
+      "category": "miticide",
+      "product_examples": "Zeal",
+      "vapor_pressure_mpa": null,
+      "volatility": "low",
+      "droplet_size": "fine",
+      "min_wind_mph": 3,
+      "max_wind_mph": 10,
+      "notes": "Fine droplets for mite coverage increase drift sensitivity."
+    },
+    {
+      "name": "Hexythiazox",
+      "category": "miticide",
+      "product_examples": "Onager",
+      "vapor_pressure_mpa": 0.0034,
+      "volatility": "low",
+      "droplet_size": "fine",
+      "min_wind_mph": 3,
+      "max_wind_mph": 10,
+      "notes": "Fine droplets for mite coverage increase drift sensitivity."
+    },
+    {
+      "name": "Bifenazate",
+      "category": "miticide",
+      "product_examples": "Acramite-50WS",
+      "vapor_pressure_mpa": null,
+      "volatility": "low",
+      "droplet_size": "fine",
+      "min_wind_mph": 3,
+      "max_wind_mph": 10,
+      "notes": "Fine droplets for mite coverage increase drift sensitivity."
+    },
+    {
+      "name": "Propiconazole",
+      "category": "fungicide (DMI)",
+      "product_examples": "Tilt, Orbit",
+      "vapor_pressure_mpa": 0.056,
+      "volatility": "low",
+      "droplet_size": "medium",
+      "min_wind_mph": 3,
+      "max_wind_mph": 10,
+      "notes": "Common for brown rot and blight in tree crops."
+    },
+    {
+      "name": "Tebuconazole",
+      "category": "fungicide (DMI)",
+      "product_examples": "Folicur, Tebuzol",
+      "vapor_pressure_mpa": 0.0013,
+      "volatility": "low",
+      "droplet_size": "medium",
+      "min_wind_mph": 3,
+      "max_wind_mph": 10,
+      "notes": "Common for brown rot in stone fruit and almonds."
+    },
+    {
+      "name": "Myclobutanil",
+      "category": "fungicide (DMI)",
+      "product_examples": "Rally 40WSP",
+      "vapor_pressure_mpa": 0.213,
+      "volatility": "low",
+      "droplet_size": "medium",
+      "min_wind_mph": 3,
+      "max_wind_mph": 10,
+      "notes": "Common for powdery mildew and brown rot."
+    },
+    {
+      "name": "Azoxystrobin",
+      "category": "fungicide (strobilurin)",
+      "product_examples": "Abound",
+      "vapor_pressure_mpa": 1.1e-07,
+      "volatility": "low",
+      "droplet_size": "medium",
+      "min_wind_mph": 3,
+      "max_wind_mph": 10,
+      "notes": "Very low volatility; toxic to aquatic life."
+    },
+    {
+      "name": "Trifloxystrobin",
+      "category": "fungicide (strobilurin)",
+      "product_examples": "Flint Extra",
+      "vapor_pressure_mpa": 0.0034,
+      "volatility": "low",
+      "droplet_size": "medium",
+      "min_wind_mph": 3,
+      "max_wind_mph": 10,
+      "notes": "Toxic to aquatic life; protect waterways from drift."
+    },
+    {
+      "name": "Boscalid",
+      "category": "fungicide (SDHI)",
+      "product_examples": "Endura",
+      "vapor_pressure_mpa": 0.00072,
+      "volatility": "low",
+      "droplet_size": "medium",
+      "min_wind_mph": 3,
+      "max_wind_mph": 10,
+      "notes": "Common rotation partner for brown rot and botrytis."
+    },
+    {
+      "name": "Iprodione",
+      "category": "fungicide",
+      "product_examples": "Rovral 4",
+      "vapor_pressure_mpa": 0.0005,
+      "volatility": "low",
+      "droplet_size": "medium",
+      "min_wind_mph": 3,
+      "max_wind_mph": 10,
+      "notes": "Used at bloom in several tree crops."
+    },
+    {
+      "name": "Fenhexamid",
+      "category": "fungicide",
+      "product_examples": "Elevate 50 WDG",
+      "vapor_pressure_mpa": 0.0004,
+      "volatility": "low",
+      "droplet_size": "medium",
+      "min_wind_mph": 3,
+      "max_wind_mph": 10,
+      "notes": "Targets botrytis and brown rot."
+    },
+    {
+      "name": "Cyprodinil",
+      "category": "fungicide (anilinopyrimidine)",
+      "product_examples": "Vangard",
+      "vapor_pressure_mpa": 0.51,
+      "volatility": "low",
+      "droplet_size": "medium",
+      "min_wind_mph": 3,
+      "max_wind_mph": 10,
+      "max_temp_f": 90,
+      "notes": "Higher vapor pressure than most fungicides here; avoid hot conditions."
+    },
+    {
+      "name": "Fludioxonil",
+      "category": "fungicide",
+      "product_examples": "Scholar",
+      "vapor_pressure_mpa": 0.00039,
+      "volatility": "low",
+      "droplet_size": "medium",
+      "min_wind_mph": 3,
+      "max_wind_mph": 10,
+      "notes": "Used for postharvest and field disease control."
+    },
+    {
+      "name": "Copper hydroxide",
+      "category": "fungicide/bactericide",
+      "product_examples": "Kocide 3000",
+      "vapor_pressure_mpa": null,
+      "volatility": "low",
+      "droplet_size": "medium",
+      "min_wind_mph": 3,
+      "max_wind_mph": 10,
+      "notes": "Inorganic copper has negligible vapor pressure; drift risk is particle and droplet transport."
+    },
+    {
+      "name": "Glufosinate",
+      "category": "herbicide (orchard floor)",
+      "product_examples": "Rely 280",
+      "vapor_pressure_mpa": null,
+      "volatility": "low",
+      "droplet_size": "coarse",
+      "min_wind_mph": 3,
+      "max_wind_mph": 10,
+      "notes": "Drift onto green tissue injures trees; vapor pressure not filled in."
+    },
+    {
+      "name": "Paraquat",
+      "category": "herbicide (orchard floor)",
+      "product_examples": "Gramoxone SL",
+      "vapor_pressure_mpa": null,
+      "volatility": "low",
+      "droplet_size": "coarse",
+      "min_wind_mph": 3,
+      "max_wind_mph": 10,
+      "notes": "Restricted-use product; check label, buffers and applicator rules."
+    },
+    {
+      "name": "Pendimethalin",
+      "category": "herbicide (pre-emergent)",
+      "product_examples": "Prowl H2O",
+      "vapor_pressure_mpa": 1.94,
+      "volatility": "moderate",
+      "droplet_size": "coarse",
+      "min_wind_mph": 3,
+      "max_wind_mph": 10,
+      "max_temp_f": 90,
+      "notes": "Can volatilize in heat; avoid hot afternoons."
+    },
+    {
+      "name": "Flumioxazin",
+      "category": "herbicide (pre-emergent)",
+      "product_examples": "Chateau SW",
+      "vapor_pressure_mpa": 0.32,
+      "volatility": "low",
+      "droplet_size": "coarse",
+      "min_wind_mph": 3,
+      "max_wind_mph": 10,
+      "notes": "Drift onto green tissue can injure trees."
+    },
+    {
+      "name": "Oryzalin",
+      "category": "herbicide (pre-emergent)",
+      "product_examples": "Surflan AS",
+      "vapor_pressure_mpa": null,
+      "volatility": "low",
+      "droplet_size": "coarse",
+      "min_wind_mph": 3,
+      "max_wind_mph": 10,
+      "notes": "Soil-applied; vapor pressure not filled in."
+    },
+    {
+      "name": "Simazine",
+      "category": "herbicide (pre-emergent)",
+      "product_examples": "Princep",
+      "vapor_pressure_mpa": 0.0028,
+      "volatility": "low",
+      "droplet_size": "coarse",
+      "min_wind_mph": 3,
+      "max_wind_mph": 10,
+      "notes": "Soil-applied; check label for use limits."
+    },
+    {
+      "name": "Indaziflam",
+      "category": "herbicide (pre-emergent)",
+      "product_examples": "Alion",
+      "vapor_pressure_mpa": null,
+      "volatility": "low",
+      "droplet_size": "coarse",
+      "min_wind_mph": 3,
+      "max_wind_mph": 10,
+      "notes": "Soil-applied; vapor pressure not filled in."
+    },
+    {
+      "name": "2,4-D (ester formulations)",
+      "category": "herbicide",
+      "product_examples": "Various",
+      "vapor_pressure_mpa": null,
+      "volatility": "high",
+      "droplet_size": "coarse",
+      "min_wind_mph": 3,
+      "max_wind_mph": 10,
+      "max_temp_f": 85,
+      "notes": "Volatile and formulation-dependent; vapor can injure sensitive neighboring crops."
     }
   ]
 }
