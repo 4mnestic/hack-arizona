@@ -55,7 +55,7 @@ Each reading, the pesticide, the warnings, and the final answer are written to a
 
 ## Layout
 
-- `spraywait/weather/` — inputs. `Reading` = timestamp + list of `Level`s (height, temp, wind speed, wind direction). `WeatherSource` is the interface; `SimulatedSource` is the only implementation so far. Add NWS/sensor sources by subclassing it.
+- `spraywait/weather/` — inputs. `Reading` = timestamp + list of `Level`s (height, temp, wind speed, wind direction). `WeatherSource` is the interface; implementations: `SimulatedSource` (scenarios), `StationSource` (farm station payloads, dummy for now), `FarmSource` (pushed readings), `PublicSource` (Open-Meteo). See Web app below.
 - `spraywait/pesticides/` — `PesticideDB` interface; `LocalPesticideDB` reads `pesticides.json`. Swap in an online DB with the same interface.
 - `spraywait/checks/` — one file per check (inversion, wind speed, wind shear, volatility, data quality). Each returns a list of `Flag(severity, check, reason)`. Thresholds are module constants at the top of each file.
 - `spraywait/decision.py` — `decide()` runs every check; the most severe flag sets GO/CAUTION/STOP and all reasons are reported. `single_station_decision()` uses only the lowest level (for demo comparison).
@@ -64,5 +64,33 @@ Each reading, the pesticide, the warnings, and the final answer are written to a
 ## Testing
 
 ```bash
-.venv/bin/pytest --cov=spraywait
+.venv/bin/pytest --cov=spraywait --cov=api --cov=tools
 ```
+
+## Web app
+
+`api/main.py` is a FastAPI app; `web/` is the PWA it serves (plain HTML/JS, no build step).
+
+```bash
+FARM_API_KEY=devkey .venv/bin/uvicorn api.main:app --host 0.0.0.0 --port 8000 --reload
+```
+
+- `/` is live mode. The farmer picks a **pesticide** and **nozzle** only; weather comes from the farm station. `FARM_WEATHER=dummy` (default) reads the simulated station; `FARM_WEATHER=push` uses the latest payload the real station posted (none yet gives STOP).
+- `/demo` is demo mode. It adds a conditions picker: simulated scenarios, or public forecast data (Open-Meteo) at the phone's location.
+
+| Route | Purpose |
+|---|---|
+| `GET /api/pesticides`, `/api/nozzles`, `/api/scenarios` | Picker options |
+| `POST /api/decision` | `{pesticide, nozzle, source: farm\|station\|simulated\|public, scenario, lat, lon}` returns decision, ground-only comparison, reading, resolved spray profile |
+| `POST /api/readings` | Farm station pushes its payload (format below) with header `X-Farm-Key: $FARM_API_KEY` |
+
+- `spraywait/nozzles/`: nozzle catalog (`nozzles.json`); ASABE droplet class maps to the engine's fine/medium/coarse.
+- `spraywait/spray_setup.py`: `SpraySetup().resolve(pesticide, nozzle)` returns the `Pesticide` the checks take, with droplet size, VMD, and pressure from the nozzle.
+- `spraywait/weather/station.py`: the farm-station payload format (vendor-style: UTC time, metric units, one record per sensor with height), `parse_station_payload()` to turn it into a `Reading`, and `DummyStation`, a simulated 1.5 m / 9.1 m mast whose weather follows the local clock (inversion after dusk, mixing by day). Wiring a real station means replacing the payload supplier, not the checks.
+- `spraywait/weather/farm.py`: in-memory store of the latest pushed reading (resets when the server restarts).
+- `spraywait/weather/public.py`: Open-Meteo, 2 m temperature + 10 m wind near the ground, 80 m aloft. Demo only.
+- `tools/push_reading.py`: stand-in farm station; pushes one dummy-station payload.
+
+## Deploy (Render)
+
+`render.yaml` is a Render Blueprint (free plan, deploys the `dev` branch, `FARM_WEATHER=dummy`, generates `FARM_API_KEY`). In Render: **New > Blueprint**, connect the GitHub repo, apply. The free plan sleeps after ~15 idle minutes, so the first request can take up to a minute.

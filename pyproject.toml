@@ -3,10 +3,10 @@ name = "spraywait"
 version = "0.1.0"
 description = "Spray or Wait? - drift-risk decision support for orchard pesticide application"
 requires-python = ">=3.11"
-dependencies = []
+dependencies = ["fastapi", "uvicorn"]
 
 [project.optional-dependencies]
-dev = ["pytest", "pytest-cov"]
+dev = ["httpx", "pytest", "pytest-cov"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Spray or Wait</title>
+  <meta name="description" content="Go, Caution, or Stop for orchard pesticide spraying, with the reasons why.">
+  <meta name="theme-color" content="#14181c">
+  <link rel="manifest" href="/manifest.json">
+  <link rel="icon" href="/icons/icon-192.png">
+  <link rel="apple-touch-icon" href="/icons/icon-192.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <main>
+    <header>
+      <h1>Spray or Wait <span id="mode-badge" class="badge" hidden>DEMO</span></h1>
+      <a id="mode-link" class="small" href="/demo">Demo</a>
+    </header>
+
+    <section class="controls">
+      <label>Pesticide
+        <select id="pesticide"></select>
+      </label>
+      <label>Nozzle
+        <select id="nozzle"></select>
+      </label>
+      <label id="scenario-field" hidden>Conditions (demo)
+        <select id="scenario"></select>
+      </label>
+      <p id="scenario-desc" class="muted small" hidden></p>
+    </section>
+
+    <section id="status" class="status loading" aria-live="polite">
+      <div class="status-word">…</div>
+      <div class="status-sub">Checking conditions</div>
+    </section>
+    <p id="source" class="muted small center"></p>
+
+    <section>
+      <h2>Why</h2>
+      <ul id="reasons" class="reasons"></ul>
+    </section>
+
+    <section id="compare" class="compare" hidden></section>
+
+    <section id="levels-section">
+      <h2>Conditions by height</h2>
+      <table class="levels">
+        <thead><tr><th>Height</th><th>Temp</th><th>Wind</th><th>From</th></tr></thead>
+        <tbody id="levels"></tbody>
+      </table>
+    </section>
+
+    <footer class="muted small">Advisory only. The pesticide label is the law.</footer>
+  </main>
+  <script src="/app.js"></script>
+</body>
+</html>

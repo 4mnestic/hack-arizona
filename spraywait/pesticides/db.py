@@ -18,6 +18,10 @@ class Pesticide:
     max_wind_mph: float = 10.0
     max_temp_f: float | None = None
     notes: str = ""
+    # Set by spraywait.spray_setup when a nozzle is chosen.
+    nozzle: str = ""
+    vmd_microns: float | None = None
+    pressure_psi: float | None = None
 
 
 DEFAULT_PESTICIDE = Pesticide(

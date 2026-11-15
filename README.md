@@ -34,7 +34,15 @@ Go, Caution, or Stop for orchard pesticide spraying, with the reasons why.
 
 ## Run it
 
-<!-- TODO: copy-paste commands to install, run, and test. -->
+```bash
+python -m venv .venv && .venv/bin/pip install -r requirements.txt
+FARM_API_KEY=devkey .venv/bin/uvicorn api.main:app --host 0.0.0.0 --port 8000
+```
+
+- Live app: http://localhost:8000. Pick a pesticide and nozzle; weather comes from the farm's station (simulated until a real one is connected).
+- Demo app: http://localhost:8000/demo. Adds simulated scenarios and public forecast data.
+- Simulate a real station pushing data (server started with `FARM_WEATHER=push`): `FARM_API_KEY=devkey .venv/bin/python -m tools.push_reading http://localhost:8000`
+- Tests: `.venv/bin/pytest --cov=spraywait --cov=api --cov=tools`
 
 ## Tech stack
 

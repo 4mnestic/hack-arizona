@@ -1,0 +1,17 @@
+# Render Blueprint: New > Blueprint in the Render dashboard, pick this repo.
+services:
+  - type: web
+    name: spraywait
+    runtime: python
+    plan: free
+    branch: dev
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn api.main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /api/health
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.12.8
+      - key: FARM_WEATHER   # dummy = simulated station; push = real station posts to /api/readings
+        value: dummy
+      - key: FARM_API_KEY
+        generateValue: true
