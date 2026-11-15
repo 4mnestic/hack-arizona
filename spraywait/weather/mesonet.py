@@ -50,7 +50,7 @@ class MesonetStation:
             raise ValueError(f"{path}: no rows")
         self.station_id = f"mesonet-{rows[0]['STID'].strip().lower()}"
         self.rows = {r["TIME"].strip(): r for r in rows}
-        self.shift = shift
+        self.shift = round(shift / STEP) * STEP  # rows are 5 min apart; an off-grid shift would match none
 
     @staticmethod
     def slot(now: datetime) -> datetime:
