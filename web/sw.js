@@ -1,6 +1,6 @@
 // Caches the app shell so it opens offline; API calls always go to the network.
-const CACHE = "spraywait-v3";
-const SHELL = ["/", "/demo", "/log", "/log.js", "/index.html", "/style.css", "/app.js", "/manifest.json", "/icons/icon-192.png", "/icons/icon-512.png"];
+const CACHE = "spraywait-v4";
+const SHELL = ["/", "/demo", "/log", "/log.js", "/station", "/station.js", "/index.html", "/style.css", "/app.js", "/manifest.json", "/icons/icon-192.png", "/icons/icon-512.png"];
 
 self.addEventListener("install", (e) => {
   e.waitUntil(caches.open(CACHE).then((c) => c.addAll(SHELL)).then(() => self.skipWaiting()));

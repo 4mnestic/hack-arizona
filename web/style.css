@@ -132,3 +132,32 @@ header a { color: var(--muted); }
 .entry .reasons { margin-top: 6px; }
 .tiny { font-size: 0.75rem; }
 header nav { display: flex; gap: 14px; }
+
+/* Station page */
+:root { --s1: #2a78d6; --s2: #eb6834; --grid: #e6e8e5; }
+@media (prefers-color-scheme: dark) { :root { --s1: #3987e5; --s2: #d95926; --grid: #2a3036; } }
+.legend { display: flex; flex-wrap: wrap; gap: 14px; margin: 12px 0 0; color: var(--muted); }
+.legend span { display: inline-flex; align-items: center; gap: 6px; }
+.swatch { width: 14px; height: 4px; border-radius: 2px; background: var(--muted); display: inline-block; }
+.swatch.s1 { background: var(--s1); } .swatch.s2 { background: var(--s2); }
+.swatch.GO, .swatch.CAUTION, .swatch.STOP { height: 12px; width: 12px; }
+.swatch.GO { background: var(--go); } .swatch.CAUTION { background: var(--caution); } .swatch.STOP { background: var(--stop); }
+.chart { margin: 0; background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 6px 4px 2px; touch-action: pan-y; }
+.chart svg { display: block; width: 100%; height: auto; overflow: visible; }
+.chart text { fill: var(--muted); font-size: 11px; }
+.chart .grid { stroke: var(--grid); stroke-width: 1; }
+.chart .line { fill: none; stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
+.chart .l1 { stroke: var(--s1); } .chart .l2 { stroke: var(--s2); }
+.chart .d1 { fill: var(--s1); } .chart .d2 { fill: var(--s2); }
+.chart .dot { stroke: var(--card); stroke-width: 2; }
+.chart .band { fill: var(--stop); opacity: .08; }
+.chart .ok-band { fill: var(--go); opacity: .08; }
+.chart .cross { stroke: var(--muted); stroke-width: 1; stroke-dasharray: 3 3; }
+.chart .GO { fill: var(--go); } .chart .CAUTION { fill: var(--caution); } .chart .STOP { fill: var(--stop); }
+.tip {
+  position: fixed; z-index: 10; pointer-events: none; background: var(--card); color: var(--text);
+  border: 1px solid var(--line); border-radius: 8px; padding: 6px 10px; font-size: 0.8rem;
+  box-shadow: 0 4px 14px rgba(0,0,0,.15); max-width: 240px;
+}
+.table-wrap { max-height: 320px; overflow: auto; margin-top: 8px; }
+details > summary { cursor: pointer; min-height: 44px; display: flex; align-items: center; margin-top: 12px; }

@@ -65,8 +65,26 @@ def parse_station_payload(payload: dict) -> Reading:
             by_height.setdefault(h, {})["wind_dir_deg"] = value
         # other types (gusts, humidity, ...) are not used by the checks yet
 
+    _pair_heights(by_height)
     levels = [Level(h, **v) for h, v in sorted(by_height.items()) if {"temp_f", "wind_mph"} <= v.keys()]
     return Reading(observed, levels, source=f"farm station {payload.get('station_id', '?')}")
+
+
+PAIR_FT = 4.0  # wind sensor this close to a thermometer counts as the same level
+
+
+def _pair_heights(by_height: dict[float, dict]) -> None:
+    """Masts often mount anemometers a little above the thermometer (Mesonet: 1.5/2 m, 9/10 m).
+
+    Merge each wind-only height into the nearest temperature-only height within PAIR_FT;
+    the level keeps the thermometer's height, since inversion depends on it.
+    """
+    temps = [h for h, v in by_height.items() if "temp_f" in v and "wind_mph" not in v]
+    for h in [h for h, v in by_height.items() if "wind_mph" in v and "temp_f" not in v]:
+        near = min(temps, key=lambda t: abs(t - h), default=None)
+        if near is not None and abs(near - h) <= PAIR_FT:
+            by_height[near].update(by_height.pop(h))
+            temps.remove(near)
 
 
 class DummyStation:

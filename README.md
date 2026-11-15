@@ -41,7 +41,10 @@ FARM_API_KEY=devkey .venv/bin/uvicorn api.main:app --host 0.0.0.0 --port 8000
 
 - Live app: http://localhost:8000. Pick a pesticide and nozzle; weather comes from the farm's station (simulated until a real one is connected).
 - Demo app: http://localhost:8000/demo. Adds simulated scenarios and public forecast data.
-- Simulate a real station pushing data (server started with `FARM_WEATHER=push`): `FARM_API_KEY=devkey .venv/bin/python -m tools.push_reading http://localhost:8000`
+- Station page: http://localhost:8000/station. What the farm station is reporting: readings at each height, a 24-hour chart, and the spray status over time.
+- Farm station from real data: start the server with `FARM_WEATHER=mesonet` (the deployed default) to replay one day of Oklahoma Mesonet readings (`data/mesonet_data_files.csv`) in real time, one reading every 5 minutes, starting with the last 6 hours (`MESONET_BACKFILL_HOURS`).
+- Or run that replay as a separate station posting over the network (server with `FARM_WEATHER=push`): `FARM_API_KEY=devkey .venv/bin/python -m tools.mesonet_station http://localhost:8000 --backfill-hours 6`
+- Push one simulated reading instead: `FARM_API_KEY=devkey .venv/bin/python -m tools.push_reading http://localhost:8000`
 - Tests: `.venv/bin/pytest --cov=spraywait --cov=api --cov=tools`
 
 ## Tech stack

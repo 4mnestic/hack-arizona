@@ -1,7 +1,8 @@
 """FastAPI backend: wraps the spraywait engine in a JSON API and serves the PWA.
 
 Live mode (/) uses the farm's station. FARM_WEATHER=dummy (default) reads the simulated
-station; FARM_WEATHER=push uses the latest payload the real station POSTed to /api/readings.
+station; FARM_WEATHER=push uses the latest payload the real station POSTed to /api/readings;
+FARM_WEATHER=mesonet replays the Mesonet CSV (MESONET_CSV) in real time inside the app.
 Demo mode (/demo) can also use simulated scenarios or public forecast data.
 """
 
@@ -10,7 +11,7 @@ import io
 import os
 import secrets
 from dataclasses import asdict
-from datetime import datetime
+from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Literal
 
@@ -23,8 +24,10 @@ from spraywait import decide, single_station_decision
 from spraywait.log import DecisionLog
 from spraywait.pesticides import DEFAULT_PESTICIDE
 from spraywait.spray_setup import SpraySetup
-from spraywait.weather import (SCENARIOS, FarmSource, FarmStationStore, PublicSource, SimulatedSource,
-                               StationSource, WeatherSource, parse_station_payload)
+from spraywait.weather import (SCENARIOS, FarmSource, FarmStationStore, MesonetFeed, MesonetStation,
+                               PublicSource, SimulatedSource, StationSource, WeatherSource,
+                               parse_station_payload)
+from spraywait.weather.mesonet import DEFAULT_CSV
 
 WEB_DIR = Path(__file__).resolve().parent.parent / "web"
 DEFAULT_SCENARIO = "evening_inversion"
@@ -34,6 +37,21 @@ setup = SpraySetup()
 farm = FarmStationStore()
 log = DecisionLog(Path(os.environ.get("SPRAY_LOG_PATH", "spray_log.jsonl")))
 _last_logged: dict[tuple, tuple] = {}
+_feed: MesonetFeed | None = None
+
+
+def _sync_station() -> None:
+    """In mesonet mode, store every replayed reading that has come due (built on first use)."""
+    global _feed
+    if os.environ.get("FARM_WEATHER") != "mesonet":
+        return
+    if _feed is None or _feed.store is not farm:
+        path = Path(os.environ.get("MESONET_CSV", DEFAULT_CSV))
+        if not path.exists():
+            return  # no data file: the farm store stays empty, so live mode fails safe to STOP
+        backfill = timedelta(hours=float(os.environ.get("MESONET_BACKFILL_HOURS", 6)))
+        _feed = MesonetFeed(MesonetStation(path), farm, backfill)
+    _feed.sync()
 
 
 class DecisionRequest(BaseModel):
@@ -85,6 +103,29 @@ def push_reading(payload: dict, x_farm_key: str | None = Header(default=None)) -
     return {"stored": reading.to_dict()}
 
 
+def _reading_out(reading) -> dict:
+    """Reading as JSON with an explicit UTC offset (engine times are naive server-local)."""
+    return reading.to_dict() | {"timestamp": reading.timestamp.astimezone().isoformat()}
+
+
+@app.get("/api/station")
+def station() -> dict:
+    """What the farm station has reported: latest reading and the last 24 h, each with the
+    generic-label status it implied at the time (pesticide-specific limits are on the main page)."""
+    def point(r):
+        d = decide(r, DEFAULT_PESTICIDE, now=r.timestamp)
+        return _reading_out(r) | {"status": d.status.value, "checks": sorted({f.check for f in d.flags})}
+
+    _sync_station()
+    latest = farm.latest
+    return {
+        "weather": os.environ.get("FARM_WEATHER", "dummy"),
+        "latest": point(latest) if latest else None,
+        "age_s": int((datetime.now() - latest.timestamp).total_seconds()) if latest else None,
+        "history": [point(r) for r in farm.history()],
+    }
+
+
 def _source(req: DecisionRequest) -> WeatherSource:
     if req.source == "simulated":
         scenario = req.scenario or DEFAULT_SCENARIO
@@ -97,6 +138,7 @@ def _source(req: DecisionRequest) -> WeatherSource:
         return PublicSource(req.lat, req.lon)
     if req.source == "station" or os.environ.get("FARM_WEATHER", "dummy") == "dummy":
         return StationSource()
+    _sync_station()
     return FarmSource(farm)
 
 
@@ -118,8 +160,7 @@ def decision(req: DecisionRequest) -> dict:
     return {
         "decision": result.to_dict(),
         "ground_only": ground.to_dict() if ground else None,
-        # Engine times are naive server-local; send an explicit offset so phones show their own time.
-        "reading": reading.to_dict() | {"timestamp": reading.timestamp.astimezone().isoformat()},
+        "reading": _reading_out(reading),
         "pesticide": asdict(pesticide),
     }
 
@@ -171,6 +212,11 @@ def get_log_csv(mode: Literal["live", "demo"] = "live") -> Response:
 @app.get("/log", include_in_schema=False)
 def log_page() -> FileResponse:
     return FileResponse(WEB_DIR / "log.html")
+
+
+@app.get("/station", include_in_schema=False)
+def station_page() -> FileResponse:
+    return FileResponse(WEB_DIR / "station.html")
 
 
 @app.get("/demo", include_in_schema=False)

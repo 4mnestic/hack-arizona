@@ -75,7 +75,7 @@ Each reading, the pesticide, the warnings, and the final answer are written to a
 FARM_API_KEY=devkey .venv/bin/uvicorn api.main:app --host 0.0.0.0 --port 8000 --reload
 ```
 
-- `/` is live mode. The farmer picks a **pesticide** and **nozzle** only; weather comes from the farm station. `FARM_WEATHER=dummy` (default) reads the simulated station; `FARM_WEATHER=push` uses the latest payload the real station posted (none yet gives STOP).
+- `/` is live mode. The farmer picks a **pesticide** and **nozzle** only; weather comes from the farm station. `FARM_WEATHER=dummy` (default) reads the simulated station; `FARM_WEATHER=push` uses the latest payload the real station posted (none yet gives STOP). `FARM_WEATHER=mesonet` replays the Mesonet CSV in real time inside the app.
 - `/log` shows the time-stamped log (Live/Demo tabs, status-changes filter, CSV download). Every new reading checked is logged once per pesticide/nozzle (refreshes don't duplicate). Stored as JSONL at `SPRAY_LOG_PATH` (default `spray_log.jsonl`); on Render's free plan it resets when the server sleeps.
 - `/demo` is demo mode. It adds a conditions picker: simulated scenarios, or public forecast data (Open-Meteo) at the phone's location.
 
@@ -85,15 +85,18 @@ FARM_API_KEY=devkey .venv/bin/uvicorn api.main:app --host 0.0.0.0 --port 8000 --
 | `POST /api/decision` | `{pesticide, nozzle, source: farm\|station\|simulated\|public, scenario, lat, lon}` returns decision, ground-only comparison, reading, resolved spray profile |
 | `GET /api/log?mode=live\|demo&changes_only=&limit=` | Log entries, newest first; `changed_from` marks status changes (alerts) |
 | `GET /api/log.csv?mode=` | Log as CSV |
+| `GET /api/station` | Latest farm reading, its age, and 24 h history; each point carries the generic-label status and the checks it triggered |
 | `POST /api/readings` | Farm station pushes its payload (format below) with header `X-Farm-Key: $FARM_API_KEY` |
 
 - `spraywait/nozzles/`: nozzle catalog (`nozzles.json`); ASABE droplet class maps to the engine's fine/medium/coarse.
 - `spraywait/spray_setup.py`: `SpraySetup().resolve(pesticide, nozzle)` returns the `Pesticide` the checks take, with droplet size, VMD, and pressure from the nozzle.
-- `spraywait/weather/station.py`: the farm-station payload format (vendor-style: UTC time, metric units, one record per sensor with height), `parse_station_payload()` to turn it into a `Reading`, and `DummyStation`, a simulated 1.5 m / 9.1 m mast whose weather follows the local clock (inversion after dusk, mixing by day). Wiring a real station means replacing the payload supplier, not the checks.
-- `spraywait/weather/farm.py`: in-memory store of the latest pushed reading (resets when the server restarts).
+- `spraywait/weather/station.py`: the farm-station payload format (vendor-style: UTC time, metric units, one record per sensor with height), `parse_station_payload()` to turn it into a `Reading`, and `DummyStation`, a simulated 1.5 m / 9.1 m mast whose weather follows the local clock (inversion after dusk, mixing by day). Wiring a real station means replacing the payload supplier, not the checks. The parser pairs a wind-only height with the nearest temperature-only height within 4 ft (masts often mount anemometers just above the thermometer).
+- `spraywait/weather/mesonet.py`: `MesonetStation` replays a Mesonet 5-minute day file (TIME in UTC) as a live station. At UTC clock time HH:MM it reports that row in the payload format above. Temperature is at 1.5 m and 9 m, wind speed at 2 m and 10 m, wind direction at 10 m only. Missing-data codes (-99x) become null. `MesonetFeed` runs it inside the app (`FARM_WEATHER=mesonet`): with no timer, each time the app needs weather it stores every reading that has come due since the last sync (backfilling `MESONET_BACKFILL_HOURS`, default 6, on first use). That also fills the gap after Render's free plan wakes from sleep.
+- `spraywait/weather/farm.py`: in-memory store of the latest pushed reading plus 24 h of history for `/station` (resets when the server restarts).
 - `spraywait/weather/public.py`: Open-Meteo, 2 m temperature + 10 m wind near the ground, 80 m aloft. Demo only.
 - `tools/push_reading.py`: stand-in farm station; pushes one dummy-station payload.
+- `tools/mesonet_station.py`: runs `MesonetStation` as a process that posts to `/api/readings` on every 5-minute UTC boundary. With `--backfill-hours`, it first uploads the earlier readings, like a datalogger sending its buffer.
 
 ## Deploy (Render)
 
-`render.yaml` is a Render Blueprint (free plan, deploys the `dev` branch, `FARM_WEATHER=dummy`, generates `FARM_API_KEY`). In Render: **New > Blueprint**, connect the GitHub repo, apply. The free plan sleeps after ~15 idle minutes, so the first request can take up to a minute.
+`render.yaml` is a Render Blueprint (free plan, deploys the `dev` branch, `FARM_WEATHER=mesonet`, generates `FARM_API_KEY`). In Render: **New > Blueprint**, connect the GitHub repo, apply. The free plan sleeps after ~15 idle minutes, so the first request can take up to a minute.

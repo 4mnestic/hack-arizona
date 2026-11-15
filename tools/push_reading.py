@@ -13,8 +13,10 @@ from urllib.request import Request, urlopen
 from spraywait.weather import DummyStation
 
 
-def push(base_url: str, key: str) -> dict:
-    req = Request(f"{base_url.rstrip('/')}/api/readings", data=json.dumps(DummyStation().payload()).encode(),
+def push(base_url: str, key: str, payload: dict | None = None) -> dict:
+    """POST one station payload (default: the dummy station's current one) to the app."""
+    body = payload or DummyStation().payload()
+    req = Request(f"{base_url.rstrip('/')}/api/readings", data=json.dumps(body).encode(),
                   headers={"Content-Type": "application/json", "X-Farm-Key": key}, method="POST")
     with urlopen(req, timeout=15) as res:
         return json.load(res)

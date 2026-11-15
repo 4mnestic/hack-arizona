@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Farm Station</title>
+  <meta name="description" content="Live readings from the orchard weather station, by height, over the last 24 hours.">
+  <meta name="theme-color" content="#14181c">
+  <link rel="manifest" href="/manifest.json">
+  <link rel="icon" href="/icons/icon-192.png">
+  <link rel="apple-touch-icon" href="/icons/icon-192.png">
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <main>
+    <header>
+      <h1>Farm station</h1>
+      <nav class="small">
+        <a href="/log">Log</a>
+        <a href="/">Back</a>
+      </nav>
+    </header>
+
+    <p id="station-meta" class="muted small">Loading…</p>
+    <p id="station-warn" class="compare" hidden></p>
+
+    <section id="now-section" hidden>
+      <h2>Now</h2>
+      <table class="levels">
+        <thead><tr><th>Height</th><th>Temp</th><th>Wind</th><th>From</th></tr></thead>
+        <tbody id="now"></tbody>
+      </table>
+      <p id="now-summary" class="small"></p>
+    </section>
+
+    <section id="charts" hidden>
+      <div class="legend small" aria-label="Legend">
+        <span><i class="swatch s1"></i>5 ft (ground)</span>
+        <span><i class="swatch s2"></i>30 ft (above canopy)</span>
+      </div>
+      <h2>Temperature (°F)</h2>
+      <figure class="chart" id="chart-temp"></figure>
+      <h2>Wind speed (mph)</h2>
+      <figure class="chart" id="chart-wind"></figure>
+      <h2>Spray status (generic label)</h2>
+      <figure class="chart strip" id="chart-status"></figure>
+      <div class="legend small">
+        <span><i class="swatch GO"></i>Go</span>
+        <span><i class="swatch CAUTION"></i>Caution</span>
+        <span><i class="swatch STOP"></i>Stop</span>
+      </div>
+      <div id="tip" class="tip" role="status" hidden></div>
+      <details class="small">
+        <summary>Table of readings</summary>
+        <div class="table-wrap">
+          <table class="levels">
+            <thead><tr><th>Time</th><th>5 ft</th><th>30 ft</th><th>Status</th></tr></thead>
+            <tbody id="table"></tbody>
+          </table>
+        </div>
+      </details>
+    </section>
+
+    <footer class="muted small">The station reports every 5 minutes. Advisory only. The pesticide label is the law.</footer>
+  </main>
+  <script src="/station.js"></script>
+</body>
+</html>

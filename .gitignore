@@ -225,3 +225,7 @@ CLAUDE.local.md
 
 # Spray decision log (runtime data)
 spray_log.jsonl
+
+# Local datasets (not pushed), except the Mesonet day the deployed station replays
+/data/*
+!/data/mesonet_data_files.csv
