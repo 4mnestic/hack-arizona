@@ -1,3 +1,5 @@
+<p align="center"><img src="web/icons/logo.svg" alt="SprayWait logo" width="240"></p>
+
 # SprayWait: A Pesticide Drift Awareness Tool
 
 SprayWait helps orchard farmers make informed pesticide-spraying decisions by advising "Go", "Caution", or "Stop" based on on-site weather data, pesticide name, and spray-nozzle type. But don't take SprayWait's word for it: SprayWait provides science-based reasoning to help farmers make their own informed decisions.
