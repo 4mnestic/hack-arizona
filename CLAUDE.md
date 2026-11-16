@@ -5,8 +5,8 @@ Hackathon project (hack-arizona). Python.
 ## Conventions
 
 - Tests: pytest, with coverage via `pytest --cov`.
-- Keep `README.md` current with setup and run instructions.
-- `README.md` is presentation-facing (for judges); development docs live in `docs/DEVELOPMENT.md` (setup, flow, layout) and `docs/LOGIC.md` (every rule and its source).
+- `README.md` is presentation-facing (portfolio visitors; the app is hosted on Render): no setup or run instructions.
+- Development docs live in `docs/DEVELOPMENT.md` (setup, running, flow, layout) and `docs/LOGIC.md` (every rule and its source). Keep them current.
 
 ## Challenge prompt
 

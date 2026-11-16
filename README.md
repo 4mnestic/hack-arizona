@@ -155,18 +155,9 @@ Open-Meteo. (n.d.). Weather forecast API documentation. https://open-meteo.com/e
 
 UC ANR. (n.d.). Surface inversions cause spray drift. Topics in Subtropics, University of California Agriculture and Natural Resources. https://ucanr.edu/blog/topics-subtropics/article/surface-inversions-cause-spray-drift
 
-## Run it
-
-```bash
-python -m venv .venv && .venv/bin/pip install -r requirements.txt
-FARM_API_KEY=devkey .venv/bin/uvicorn api.main:app --port 8000
-```
-
-Open http://localhost:8000 (live) or http://localhost:8000/demo (scenarios). Run the tests with `.venv/bin/pytest --cov=spraywait --cov=api --cov=tools`. Configuration, the station tools, and the code layout are in [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md).
-
 ## Tech stack
 
-Python (FastAPI) rule engine and API, a plain HTML/JS installable web app (PWA), Open-Meteo forecasts, hosted on Render. 185 pytest tests, 99% coverage.
+Python (FastAPI) rule engine and API, a plain HTML/JS installable web app (PWA), Open-Meteo forecasts, hosted on Render. 185 pytest tests, 99% coverage. Setup, configuration, and code layout are in [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md).
 
 ## What's next
 
