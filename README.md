@@ -1,12 +1,34 @@
-# SprayWait: A Pesticide Drift Tool
+# SprayWait: A Pesticide Drift Awareness Tool
 
-Go, Caution, or Stop for orchard pesticide spraying, with the reasons why.
+SprayWait helps orchard farmers make informed pesticide-spraying decisions by advising "Go", "Caution", or "Stop" based on on-site weather data, pesticide name, and spray-nozzle type. But don't just take our Tool's word for it! It provides science-based reasoning to help farmers make their own informed decisions.
 
 **Live app:** https://spraywait.onrender.com · works on any phone; install it from the browser menu ("Add to Home Screen").
 
+**Extra Features:**
+* 24-hour forecast using nearby weather station data from Open-Meteo
+* On-site station data interface to see raw data trends and recent spray-safety-level history.
+* Data log interface to see and download historical data
+* Demo mode to see real-world example scenarios and SprayWait's call and reasoning.
+* In demo mode, "Hidden inversion" illustrates a scenario where a single ground-level weather station says conditions look fine, but SprayWait catches the risk, explains why, and gives an alert.
+
+## AgX Arizona Summit Hackathon
+
+The AgX Arizona Summit Hackathon was hosted by Hack Arizona on November 15 2026. The Hack Cats team developed SprayWait in 6 hours for our project submission. The  presentation scored 18.5/20 and placed 5th out of 30 teams.
+
+## The Hack Cats Team
+
+- **Zach:** app UI, station, forecast, log, OnRender deployment, demo, and docs.
+- **Joy:** pesticide data, science research, and app UI features.
+- **Leo:** inversion and wind-shear models and the core decision engine.
+
 ## The problem
 
-Pesticide spray can drift beyond the orchard onto neighboring crops, workers, homes, and water. The riskiest condition, a temperature inversion, is invisible from the ground: the air feels calm and a single ground-level weather station says conditions are fine, while cooler air trapped under warmer air keeps fine droplets in a shallow layer that carries them sideways. Applicators decide by what they see and feel, plus regional forecasts that don't match the air inside the orchard.
+When pesticides are sprayed in an orchard, some can drift beyond the target area. It can reach neighboring crops, workers, communities and the environment. Weather is one of the biggest factors, but applicators usually judge conditions by what they see and feel at ground level. They also use regional forecasts, which may not match what’s happening inside the orchard.
+
+One of the riskiest conditions is hard to spot: a temperature inversion. Normally, air gets cooler as you go up. In an inversion, cool air sits near the ground under warmer air. This stops the air from mixing upward, so fine spray droplets and vapor stay in a shallow layer and can travel sideways for long distances. Calm air at ground level doesn’t mean it’s safe either. Winds above the trees can be stronger or blowing a different way.
+
+Your task
+Build a decision-support tool that uses weather readings from more than one height to tell a pesticide applicator whether it’s safe to spray right now, and why.
 
 ## What it does
 
@@ -148,19 +170,9 @@ FARM_API_KEY=devkey .venv/bin/uvicorn api.main:app --host 0.0.0.0 --port 8000
 
 Python (FastAPI) rule engine and API, a plain HTML/JS installable web app (PWA), Open-Meteo forecasts, hosted on Render. Tested with pytest (183 tests).
 
-## Team
-
-- **Joy:** pesticide data and science research, app UI design.
-- **Leo:** inversion and wind-shear models, the core decision engine.
-- **Zach:** app, station and forecast integration, deployment, docs.
-
 ## What's next
 
 - Real station hardware: the station data format is vendor-style, so a real mast only replaces the data source.
 - Push notifications to a closed app (Web Push), and text alerts.
 - Inversion-strength calibration against measured drift; ML models trained on station history.
 - Monitoring during and after spraying for volatile products.
-
----
-
-*Advisory only. The pesticide label is the law.*
