@@ -1,6 +1,6 @@
 # CLAUDE.md
 
-Hackathon project (hack-arizona). Python.
+SprayWait, built at Hack Arizona. Python.
 
 ## Conventions
 
