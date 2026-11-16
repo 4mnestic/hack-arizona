@@ -2,9 +2,11 @@
 
 SprayWait helps orchard farmers make informed pesticide-spraying decisions by advising "Go", "Caution", or "Stop" based on on-site weather data, pesticide name, and spray-nozzle type. But don't just take our Tool's word for it! It provides science-based reasoning to help farmers make their own informed decisions.
 
-**Live app:** https://spraywait.onrender.com · works on any phone; install it from the browser menu ("Add to Home Screen").
+**Live app:** https://spraywait.onrender.com
 
-**Extra Features:**
+**Features:**
+* Designed firstly for smartphones
+* Sends alerts when spraying conditions deteriorate.
 * 24-hour forecast using nearby weather station data from Open-Meteo
 * On-site station data interface to see raw data trends and recent spray-safety-level history.
 * Data log interface to see and download historical data
@@ -17,7 +19,7 @@ The AgX Arizona Summit Hackathon was hosted by Hack Arizona on November 15 2026.
 
 ## The Hack Cats Team
 
-- **Zach:** app UI, station, forecast, log, OnRender deployment, demo, and docs.
+- **Zach:** app UI, station, forecast, log, alerts, OnRender deployment, demo, and docs.
 - **Joy:** pesticide data, science research, and app UI features.
 - **Leo:** inversion and wind-shear models and the core decision engine.
 
