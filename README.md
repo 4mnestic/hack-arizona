@@ -2,79 +2,56 @@
 
 # SprayWait: A Pesticide Drift Awareness Tool
 
-SprayWait helps orchard farmers make informed pesticide-spraying decisions by advising "Go", "Caution", or "Stop" based on on-site weather data, pesticide name, and spray-nozzle type. But don't take SprayWait's word for it: SprayWait provides science-based reasoning to help farmers make their own informed decisions.
+SprayWait helps orchard applicators decide whether to spray pesticide right now. It reads weather at two heights in the orchard, along with the pesticide and spray nozzle being used, and answers **Go**, **Caution**, or **Stop**. SprayWait doesn't ask to be taken on faith: every answer comes with its science-based reasons, so applicators can make their own informed decisions.
 
-**Live app:** https://spraywait.onrender.com
+**Live app:** https://spraywait.onrender.com (free hosting; the first load can take up to a minute)
+
+<table>
+  <tr>
+    <td align="center"><img src="docs/screenshots/demo-inversion.png" alt="Hidden inversion: ground station says GO, SprayWait says STOP" width="260"></td>
+    <td align="center"><img src="docs/screenshots/station.png" alt="Farm station page charting temperature and wind at 5 ft and 30 ft" width="260"></td>
+    <td align="center"><img src="docs/screenshots/log.png" alt="Spray log with time-stamped decisions and triggers" width="260"></td>
+  </tr>
+  <tr>
+    <td align="center"><sub>A ground station alone says GO.<br>The 30 ft sensor makes it STOP.</sub></td>
+    <td align="center"><sub>Station readings at both heights,<br>and spray status over the day.</sub></td>
+    <td align="center"><sub>Time-stamped log of every decision<br>and what triggered it.</sub></td>
+  </tr>
+</table>
 
 ## AgX Arizona Summit Hackathon
 
-The [AgX Arizona Summit](https://hack.arizona.edu/hack-arizona-agx-hacking-future-agriculture) was a 6 hour Hackathon was hosted by [Hack Arizona](https://hack.arizona.edu/) on **November 15, 2026**.
+SprayWait was built in 6 hours at the [AgX Arizona Summit](https://hack.arizona.edu/hack-arizona-agx-hacking-future-agriculture) hackathon, hosted by [Hack Arizona](https://hack.arizona.edu/) on **November 15, 2026**.
 
-Our team presentation scored **18.5/20** and placed **5th out of 30 teams**.
+Our team scored **18.5/20** and placed **5th out of 30 teams**.
 
-## Meet the team
-- **Zach Keyes:** app UI, station, forecast, log, alerts, OnRender deployment, demo, and docs.
-    - LinkedIn: https://www.linkedin.com/in/zkey/
-    - Website: https://mnestic.space
+### Team
 
-- **Joy Hewang:** pesticide data, science research, and app UI features.
-    - LinkedIn: https://www.linkedin.com/in/lunjoyhewang/
-
-- **Leo Edgin:** inversion and wind-shear models and the core decision engine.
-    - LinkedIn: https://www.linkedin.com/in/leo-edgin-31a50724b/
-
-## Features
-* Designed for smartphones.
-* Sends alerts when spraying conditions deteriorate.
-* 24-hour forecast using nearby weather station data.
-* On-site station data interface to see raw data trends and recent spray-safety-level history.
-* Data log interface to see and download historical data
-* Demo mode to see real-world example scenarios and SprayWait's advice and reasoning.
-* In demo mode, "Hidden inversion" illustrates a scenario where a single ground-level weather station says conditions look fine, but SprayWait catches the risk, explains why, and gives an alert.
+- **Zach Keyes:** app UI, station, forecast, log, alerts, Render deployment, demo, and docs. [LinkedIn](https://www.linkedin.com/in/zkey/) · [Website](https://mnestic.space)
+- **Joy Hewang:** pesticide data, science research, and app UI features. [LinkedIn](https://www.linkedin.com/in/lunjoyhewang/)
+- **Leo Edgin:** inversion and wind-shear models and the core decision engine. [LinkedIn](https://www.linkedin.com/in/leo-edgin-31a50724b/)
 
 ## The problem
 
-When pesticides are sprayed in an orchard, some can drift beyond the target area. It can reach neighboring crops, workers, communities and the environment. Weather is one of the biggest factors, but applicators usually judge conditions by what they see and feel at ground level. They also use regional forecasts, which may not match what’s happening inside the orchard.
+When pesticides are sprayed in an orchard, some can drift beyond the target area and reach neighboring crops, workers, communities, and the environment. Weather is one of the biggest factors, but applicators usually judge conditions by what they see and feel at ground level, or by regional forecasts that may not match what's happening inside the orchard.
 
-One of the riskiest conditions is hard to spot: a temperature inversion. Normally, air gets cooler as you go up. In an inversion, cool air sits near the ground under warmer air. This stops the air from mixing upward, so fine spray droplets and vapor stay in a shallow layer and can travel sideways for long distances. Calm air at ground level doesn’t mean it’s safe either. Winds above the trees can be stronger or blowing a different way.
+One of the riskiest conditions is hard to spot: a **temperature inversion**. Normally, air gets cooler as you go up. In an inversion, cool air sits near the ground under warmer air. The air stops mixing upward, so fine spray droplets and vapor stay in a shallow layer and can travel sideways for long distances. Calm air at ground level doesn't mean it's safe either: winds above the trees can be stronger or blowing a different way.
 
-Your task
-Build a decision-support tool that uses weather readings from more than one height to tell a pesticide applicator whether it’s safe to spray right now, and why.
+The challenge: build a decision-support tool that uses weather readings from more than one height to tell an applicator whether it's safe to spray right now, and why.
 
 ## What it does
 
 - **Reads weather at two heights** (about 5 ft and 30 ft) from the orchard's station, plus the pesticide and nozzle being used.
-- **Says GO, CAUTION, or STOP right now**, with the reasons in plain language (inversion, wind too low or too high, wind changing with height, heat and volatility limits).
+- **Says GO, CAUTION, or STOP right now**, with the reasons in plain language: inversion, wind too low or too high, wind changing with height, heat and volatility limits.
 - **Alerts** when conditions get worse (GO → CAUTION/STOP, CAUTION → STOP), on screen and as a phone notification.
 - **Plans ahead:** a 24-hour forecast strip shows the next safe spray window, or warns when conditions are expected to turn bad.
-- **Keeps a record:** a time-stamped log of every reading, decision, and what triggered it, exportable as CSV.
-
-## Challenge goals
-
-**Must-haves:** all met.
-
-| Goal | How SprayWait meets it |
-|---|---|
-| Read temperature and wind at two or more heights | 5 ft and 30 ft from the orchard station: a real recorded Mesonet day on Live, simulated scenarios on Demo. |
-| Detect an inversion (upper warmer than lower) | STOP whenever 30 ft is warmer than 5 ft, graded weak, moderate, or strong; CAUTION when one may be forming. |
-| Flag wind below 3 mph or above 10 mph | STOP outside the pesticide's label limits (3–10 mph by default), CAUTION within 1 mph of either limit. |
-| Flag large wind speed or direction differences between heights | CAUTION at 5 mph or 45°, STOP at 8 mph or 90°. |
-| Clear status with plain-language reasons | GO, CAUTION, or STOP with every reason listed, using the measured numbers. |
-| Time-stamped log of readings and what triggered each alert | Log page lists every reading, status, and trigger; downloadable as CSV. |
-
-**Stretch goals**
-
-| Goal | Status |
-|---|---|
-| Factor in pesticide properties and application details | Done. 47 pesticides with label temperature limits and volatility; the nozzle sets droplet size. |
-| Use forecasts to predict the next safe window or warn before conditions turn bad | Done. The same checks run on each hour of a 24-hour Open-Meteo forecast, giving the next GO window and an early warning. Open-Meteo, not the National Weather Service, because the NWS hourly forecast has no temperature aloft and so cannot show an inversion. |
-| Monitor during and after spraying | Partly. The app rechecks every minute against readings that arrive every 5 minutes, and alerts as soon as conditions get worse, so it works while spraying. Watching volatile products after spraying is not built yet. |
-| Alerts by text or push notification | Partly. Phone notification and in-app banner while the app is open. Notifications to a closed app, and text alerts, are not built yet. |
-| Physical sensor prototype | Not built. Stations post readings to an authenticated API; the Mesonet replay tool already does this over the network, so a real mast would only replace the data source. |
+- **Keeps a record:** a time-stamped log of every reading, decision, and what triggered it, downloadable as CSV.
+- **Shows the station:** a page charting both heights over the day, with the spray status over time.
+- **Works on a phone:** installable web app, designed for use in the field.
 
 ## Demo
 
-**Live** (`/`): the farm station replays a real day of Oklahoma Mesonet readings (temperature at 1.5 m and 9 m, wind at 2 m and 10 m) in real time. From about 4:15 to 7:30 pm Arizona time it is in a recorded evening inversion: the ground sensor alone says GO, SprayWait says STOP. The **Station** page (`/station`) charts both heights over the day; the **Log** (`/log`) shows each decision and what triggered it.
+**Live** (`/`): the farm station replays a real day of Oklahoma Mesonet readings (temperature at 1.5 m and 9 m, wind at 2 m and 10 m) in real time. From about 4:15 to 7:30 pm Arizona time it replays a recorded evening inversion: the ground sensor alone says GO, SprayWait says STOP. The **Station** page (`/station`) charts both heights over the day; the **Log** (`/log`) shows each decision and what triggered it.
 
 **Demo** (`/demo`): each scenario isolates one thing the tool checks. A dashed "Demo note" box says what it illustrates and the expected result; it is a presenter's aid, not part of the field app.
 
@@ -97,18 +74,7 @@ Pesticide + nozzle           ─┼─► Checks ─► GO / CAUTION / STOP + re
 Hourly forecast (24 h)       ─┘            (same checks per hour) ─► Next spray window
 ```
 
-- **Inversion:** temperature at 30 ft minus 5 ft. Any warming aloft is STOP, graded weak (under 1°F), moderate, or strong (3°F or more, per NDSU Extension). Nearly equal temperatures with light ground wind (under 7 mph, per UC ANR) are CAUTION: an inversion may be forming. From 2 pm to 9 am, a weaker-than-normal drop also gives an early CAUTION. Time of day only ever adds caution.
-- **Wind speed:** below 3 mph or above 10 mph is STOP (common guidance; the label's limits come first), and within 1 mph of a limit is CAUTION.
-- **Wind shear:** speed differences of 5 mph or more between heights, or direction differences of 45° or more, are CAUTION; 8 mph or 90° is STOP.
-- **Pesticide:** label temperature limits and volatility tighten the risk. The nozzle sets droplet size; with no nozzle chosen, droplets are assumed fine, the worst case for drift.
-- **Status:** the most severe flag wins and every reason is shown. Missing or stale data is never GO.
-- **Risk score (0–100):** ranks how bad it is within each status (GO 0, CAUTION 20–69, STOP 70–100), so the score never contradicts the status. It ranks risk; it is not a drift probability. It is in the API response and the log CSV, not yet on screen.
-
-Every threshold, its source, and the reasoning behind the ones no source gives a number for are in [docs/LOGIC.md](docs/LOGIC.md).
-
-## Decision rules
-
-Five checks run on every reading. The worst warning wins: any STOP means **STOP**, any CAUTION means **CAUTION**, otherwise **GO**. Every reason is shown. A risk score (0 = GO, 20–69 = CAUTION, 70–100 = STOP) ranks how bad it is without changing the status.
+Five checks run on every reading. The worst warning wins: any STOP means **STOP**, any CAUTION means **CAUTION**, otherwise **GO**. Every reason is shown.
 
 | Check | STOP | CAUTION | Basis |
 |---|---|---|---|
@@ -119,37 +85,64 @@ Five checks run on every reading. The worst warning wins: any STOP means **STOP*
 | **Wind shear** (direction) | ≥90° apart | 45–90° apart | Direction can flip up to 180° inside an inversion (NDSU) |
 | **Pesticide** | Above the label's max temperature. Highly volatile at ≥85°F | Highly volatile at 75–85°F. Moderately volatile at ≥85°F. Fine droplets with wind ≥7 mph | Vapor drift rises with heat; droplets ≤200 µm fall only inches per second (NDSU) |
 
-- If no nozzle is chosen, droplets are assumed fine, the worst case for drift.
-- Time of day can only add caution, never remove it.
+- **Pesticides and nozzles:** 47 pesticides with label temperature limits and volatility. The nozzle sets droplet size; if none is chosen, droplets are assumed fine, the worst case for drift.
+- **Time of day** can only add caution, never remove it.
+- **Forecast:** the same checks run on each hour of a 24-hour Open-Meteo forecast to find the next GO window and warn before conditions turn bad. Open-Meteo, not the National Weather Service, because the NWS hourly forecast has no temperature aloft and so cannot show an inversion.
+- **Risk score (0–100)** ranks how bad it is within each status (GO 0, CAUTION 20–69, STOP 70–100), so it never contradicts the status. It is not a drift probability. It appears in the API response and the log CSV.
 - Cutoffs without a published number are stated design choices that lean toward caution; none can turn a STOP into a GO. Every rule and its source is in [docs/LOGIC.md](docs/LOGIC.md).
+
+## Challenge goals
+
+**Must-haves:** all met.
+
+| Goal | How SprayWait meets it |
+|---|---|
+| Read temperature and wind at two or more heights | 5 ft and 30 ft from the orchard station: a real recorded Mesonet day on Live, simulated scenarios on Demo. |
+| Detect an inversion (upper warmer than lower) | STOP whenever 30 ft is warmer than 5 ft, graded weak, moderate, or strong; CAUTION when one may be forming. |
+| Flag wind below 3 mph or above 10 mph | STOP outside the pesticide's label limits (3–10 mph by default), CAUTION within 1 mph of either limit. |
+| Flag large wind speed or direction differences between heights | CAUTION at 5 mph or 45°, STOP at 8 mph or 90°. |
+| Clear status with plain-language reasons | GO, CAUTION, or STOP with every reason listed, using the measured numbers. |
+| Time-stamped log of readings and what triggered each alert | Log page lists every reading, status, and trigger; downloadable as CSV. |
+
+**Stretch goals**
+
+| Goal | Status |
+|---|---|
+| Factor in pesticide properties and application details | Done. 47 pesticides with label temperature limits and volatility; the nozzle sets droplet size. |
+| Use forecasts to predict the next safe window or warn before conditions turn bad | Done. 24-hour forecast strip with the next GO window and an early warning. |
+| Monitor during and after spraying | Partly. The app rechecks every minute against readings that arrive every 5 minutes, and alerts as soon as conditions get worse, so it works while spraying. Watching volatile products after spraying is not built yet. |
+| Alerts by text or push notification | Partly. Phone notification and in-app banner while the app is open. Notifications to a closed app, and text alerts, are not built yet. |
+| Physical sensor prototype | Not built. Stations post readings to an authenticated API; the Mesonet replay tool already does this over the network, so a real mast would only replace the data source. |
 
 ## Science
 
-### **Temperature Inversions (Primary Drift Risk)**
+### Temperature inversions (primary drift risk)
+
 - Normally, air temperature decreases with altitude. An inversion occurs when warmer air sits above cooler surface air, suppressing vertical mixing.
 - This traps fine pesticide droplets and vapor near the ground, allowing them to drift horizontally over long distances, potentially harming workers and communities.
 - Inversions are difficult to detect from ground-level conditions alone (Nowatzki, n.d.).
-### **Other Factors Affecting Spray Drift**
-- Wind Speed: Very low wind speeds can allow droplets to remain suspended, while stronger winds can carry droplets beyond the target area.
-- Wind Shear: Wind speed and direction can change with altitude. Winds above the orchard canopy may be stronger or travel in a different direction than winds near the ground.
-- Droplet Size: Smaller droplets remain airborne longer and are more easily transported by wind. Nozzle type and spray pressure influence droplet size (Nuyttens et al., 2007).
-- Temperature and Humidity: High temperatures and low humidity accelerate droplet evaporation, causing droplets to shrink and become more susceptible to drift.
-- Pesticide Volatility: Some pesticides can vaporize after application, creating additional drift risks even after spraying has stopped (Al Heidary et al., 2014).
 
-### **Forecasting the Next Spray Window**
+### Other factors affecting spray drift
+
+- **Wind speed:** very low wind speeds can allow droplets to remain suspended, while stronger winds can carry droplets beyond the target area.
+- **Wind shear:** wind speed and direction can change with altitude. Winds above the orchard canopy may be stronger or travel in a different direction than winds near the ground.
+- **Droplet size:** smaller droplets remain airborne longer and are more easily transported by wind. Nozzle type and spray pressure influence droplet size (Nuyttens et al., 2007).
+- **Temperature and humidity:** high temperatures and low humidity accelerate droplet evaporation, causing droplets to shrink and become more susceptible to drift.
+- **Pesticide volatility:** some pesticides can vaporize after application, creating additional drift risks even after spraying has stopped (Al Heidary et al., 2014).
+
+### Forecasting the next spray window
 
 - Inversions commonly develop around sunset, strengthen overnight, and break up after sunrise as the ground warms (UC ANR, n.d.).
-- SprayWait uses Open-Meteo's hourly 24-hour forecast to compare temperatures and wind at multiple heights.
-- The forecast applies the same drift-risk checks as the live system to identify:
-    - Next GO window: Consecutive hours without detected risk conditions.
-    - Early warning: When conditions are expected to become CAUTION or STOP.
+- SprayWait uses Open-Meteo's hourly 24-hour forecast to compare temperatures and wind at multiple heights, and applies the same drift-risk checks as the live system to find:
+  - **Next GO window:** consecutive hours without detected risk conditions.
+  - **Early warning:** when conditions are expected to become CAUTION or STOP.
 
 Forecasts provide planning guidance, not confirmation of orchard conditions. Weather models may underestimate nighttime inversions, so live decisions rely on the orchard's 5 ft and 30 ft sensors (Holtslag et al., 2013).
 
+> **SprayWait is a decision-support tool and does not replace pesticide label requirements, regulations, or professional judgment.**
 
-**SprayWait is a decision-support tool and does not replace pesticide label requirements, regulations, or professional judgment.**
+### References
 
-### **References**
 Nowatzki, J. (n.d.). Understanding air temperature inversions relating to pesticide drift. North Dakota State University Extension. https://www.ndsu.edu/agriculture/extension/publications/understanding-air-temperature-inversions-relating-pesticide-drift
 
 Nuyttens, D., Baetens, K., De Schampheleire, M., & Sonck, B. (2007). Effect of nozzle type, size and pressure on spray droplet characteristics. Biosystems Engineering, 97(3), 333–345. https://doi.org/10.1016/j.biosystemseng.2007.03.001
@@ -166,20 +159,14 @@ UC ANR. (n.d.). Surface inversions cause spray drift. Topics in Subtropics, Univ
 
 ```bash
 python -m venv .venv && .venv/bin/pip install -r requirements.txt
-FARM_API_KEY=devkey .venv/bin/uvicorn api.main:app --host 0.0.0.0 --port 8000
+FARM_API_KEY=devkey .venv/bin/uvicorn api.main:app --port 8000
 ```
 
-- Live app: http://localhost:8000. Pick a pesticide and nozzle; weather comes from the farm's station (simulated until a real one is connected). Below the decision, a 24-hour forecast strip shows the next GO window, or when conditions are expected to turn worse. The forecast uses Open-Meteo at the orchard location (`ORCHARD_LAT`/`ORCHARD_LON`; default: near Modesto, CA).
-- Demo app: http://localhost:8000/demo. Adds simulated scenarios and public forecast data.
-- Station page: http://localhost:8000/station. What the farm station is reporting: readings at each height, a 24-hour chart, and the spray status over time.
-- Farm station from real data: start the server with `FARM_WEATHER=mesonet` (the deployed default) to replay one day of Oklahoma Mesonet readings (`data/mesonet_data_files.csv`) in real time, one reading every 5 minutes, starting with the last 6 hours (`MESONET_BACKFILL_HOURS`). The deployed app sets `MESONET_SHIFT_HOURS=0.75`, so it replays the recorded day 45 minutes ahead of the clock. This is demo data: from about 4:15 to 7:30 pm Arizona time it replays the recorded evening inversion, when a ground station alone says GO and the 30 ft sensor makes it STOP. The file has no readings for the 2 hours before that (about 2:05 to 4:10 pm with the shift).
-- Or run that replay as a separate station posting over the network (server with `FARM_WEATHER=push`): `FARM_API_KEY=devkey .venv/bin/python -m tools.mesonet_station http://localhost:8000 --backfill-hours 6`
-- Push one simulated reading instead: `FARM_API_KEY=devkey .venv/bin/python -m tools.push_reading http://localhost:8000`
-- Tests: `.venv/bin/pytest --cov=spraywait --cov=api --cov=tools`
+Open http://localhost:8000 (live) or http://localhost:8000/demo (scenarios). Run the tests with `.venv/bin/pytest --cov=spraywait --cov=api --cov=tools`. Configuration, the station tools, and the code layout are in [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md).
 
 ## Tech stack
 
-Python (FastAPI) rule engine and API, a plain HTML/JS installable web app (PWA), Open-Meteo forecasts, hosted on Render. Tested with pytest (183 tests).
+Python (FastAPI) rule engine and API, a plain HTML/JS installable web app (PWA), Open-Meteo forecasts, hosted on Render. 185 pytest tests, 99% coverage.
 
 ## What's next
 
@@ -187,3 +174,7 @@ Python (FastAPI) rule engine and API, a plain HTML/JS installable web app (PWA),
 - Push notifications to a closed app (Web Push), and text alerts.
 - Inversion-strength calibration against measured drift; ML models trained on station history.
 - Monitoring during and after spraying for volatile products.
+
+## License
+
+[MIT](LICENSE)

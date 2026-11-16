@@ -9,6 +9,20 @@ uv venv .venv && uv pip install --python .venv/bin/python -r requirements.txt
 # or: python -m venv .venv && .venv/bin/pip install -r requirements.txt
 ```
 
+## Running
+
+```bash
+FARM_API_KEY=devkey .venv/bin/uvicorn api.main:app --host 0.0.0.0 --port 8000
+```
+
+- Pages: `/` (live), `/demo` (simulated scenarios and public forecast data), `/station` (station readings, 24-hour chart, status over time), `/log` (log and CSV download).
+- The forecast strip uses Open-Meteo at `ORCHARD_LAT`/`ORCHARD_LON` (default: near Modesto, CA).
+- `FARM_WEATHER=mesonet` (the deployed default) replays one day of Oklahoma Mesonet readings (`data/mesonet_data_files.csv`) in real time, one reading every 5 minutes, starting with the last 6 hours (`MESONET_BACKFILL_HOURS`). The deployed app sets `MESONET_SHIFT_HOURS=0.75`, which puts the recorded evening inversion on about 4:15 to 7:30 pm Arizona time. The file has no readings for the 2 hours before that (about 2:05 to 4:10 pm with the shift).
+- Run that replay as a separate station posting over the network (server with `FARM_WEATHER=push`): `FARM_API_KEY=devkey .venv/bin/python -m tools.mesonet_station http://localhost:8000 --backfill-hours 6`
+- Push one simulated reading instead: `FARM_API_KEY=devkey .venv/bin/python -m tools.push_reading http://localhost:8000`
+- Compare ground station vs. SprayWait in the terminal: `.venv/bin/python -m tools.demo [scenario]`
+- Tests: `.venv/bin/pytest --cov=spraywait --cov=api --cov=tools`
+
 ## Usage
 
 ```python
@@ -50,8 +64,8 @@ There is also a "ground station only" version that uses just the lowest height. 
 **5. Record** (`spraywait/log.py`)
 Each reading, the pesticide, the warnings, and the final answer are written to a log file with a timestamp.
 
-**6. Running it** (`demo.py`, `tests/`)
-`demo.py` runs one scenario and prints both answers. The tests run every check with known inputs and confirm the answers are right.
+**6. Running it** (`tools/demo.py`, `tests/`)
+`python -m tools.demo` runs one scenario and prints both answers. The tests run every check with known inputs and confirm the answers are right.
 
 ## Flow diagram (by file)
 
@@ -145,4 +159,4 @@ FARM_API_KEY=devkey .venv/bin/uvicorn api.main:app --host 0.0.0.0 --port 8000 --
 
 ## Deploy (Render)
 
-`render.yaml` is a Render Blueprint (free plan, deploys the `dev` branch, `FARM_WEATHER=mesonet`, generates `FARM_API_KEY`). In Render: **New > Blueprint**, connect the GitHub repo, apply. The free plan sleeps after ~15 idle minutes, so the first request can take up to a minute.
+`render.yaml` is a Render Blueprint (free plan, deploys the `main` branch, `FARM_WEATHER=mesonet`, generates `FARM_API_KEY`). In Render: **New > Blueprint**, connect the GitHub repo, apply. The free plan sleeps after ~15 idle minutes, so the first request can take up to a minute.

@@ -1,7 +1,7 @@
 [project]
 name = "spraywait"
 version = "0.1.0"
-description = "Spray or Wait? - drift-risk decision support for orchard pesticide application"
+description = "SprayWait: drift-risk decision support for orchard pesticide spraying"
 requires-python = ">=3.11"
 dependencies = ["fastapi", "uvicorn"]
 

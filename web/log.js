@@ -6,7 +6,7 @@ for (const mode of ["live", "demo"]) {
       const last = items[0] && new Date(items[0].reading.timestamp)
         .toLocaleString([], { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
       document.getElementById(`${mode}-info`).textContent =
-        items.length ? `${items.length} entries · latest ${last}` : "No entries yet";
+        items.length ? `${items.length} ${items.length === 1 ? "entry" : "entries"} · latest ${last}` : "No entries yet";
     })
     .catch(() => {});
 }

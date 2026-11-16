@@ -1,6 +1,6 @@
 # SprayWait: presentation brief
 
-Everything the team needs to present to the judges. Demo is 3 minutes. Keep to time: presentation is 5 of 20 points.
+> Archived: the brief the team used for the 3-minute judged demo at the AgX Arizona Summit hackathon on November 15, 2026. It is also a walkthrough of the app.
 
 Live app: https://spraywait.onrender.com
 Demo scenarios: https://spraywait.onrender.com/demo
