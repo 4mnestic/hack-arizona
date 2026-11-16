@@ -4,24 +4,31 @@ SprayWait helps orchard farmers make informed pesticide-spraying decisions by ad
 
 **Live app:** https://spraywait.onrender.com
 
-**Features:**
+## AgX Arizona Summit Hackathon
+
+The [AgX Arizona Summit](https://hack.arizona.edu/hack-arizona-agx-hacking-future-agriculture) was a 6 hour Hackathon was hosted by [Hack Arizona](https://hack.arizona.edu/) on **November 15, 2026**.
+
+Our team presentation scored **18.5/20** and placed **5th out of 30 teams**.
+
+## Meet the team
+- **Zach Keyes:** app UI, station, forecast, log, alerts, OnRender deployment, demo, and docs.
+    - LinkedIn: https://www.linkedin.com/in/zkey/
+    - Website: https://mnestic.space
+
+- **Joy Hewang:** pesticide data, science research, and app UI features.
+    - LinkedIn: https://www.linkedin.com/in/lunjoyhewang/
+
+- **Leo Edgin:** inversion and wind-shear models and the core decision engine.
+    - LinkedIn: https://www.linkedin.com/in/leo-edgin-31a50724b/
+
+## Features
 * Designed for smartphones.
 * Sends alerts when spraying conditions deteriorate.
 * 24-hour forecast using nearby weather station data.
 * On-site station data interface to see raw data trends and recent spray-safety-level history.
 * Data log interface to see and download historical data
-* Demo mode to see real-world example scenarios and SprayWait's call and reasoning.
+* Demo mode to see real-world example scenarios and SprayWait's advice and reasoning.
 * In demo mode, "Hidden inversion" illustrates a scenario where a single ground-level weather station says conditions look fine, but SprayWait catches the risk, explains why, and gives an alert.
-
-## AgX Arizona Summit Hackathon
-
-The AgX Arizona Summit Hackathon was hosted by Hack Arizona on November 15 2026. The Hack Cats team developed SprayWait in 6 hours for our project submission. The  presentation scored 18.5/20 and placed 5th out of 30 teams.
-
-## The Hack Cats Team
-
-- **Zach:** app UI, station, forecast, log, alerts, OnRender deployment, demo, and docs.
-- **Joy:** pesticide data, science research, and app UI features.
-- **Leo:** inversion and wind-shear models and the core decision engine.
 
 ## The problem
 
